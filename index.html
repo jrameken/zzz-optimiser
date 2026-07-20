@@ -2,494 +2,510 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ZZZ Drive Disc Optimizer 1.0</title>
-<style>
-        :root { 
-            --accent: #ffde59; 
-            --bg: #121212; 
-            --card: #1e1e1e; 
-            --text: #e0e0e0; 
-            --save: #4caf50;
-            --s-rank-border: #FF9326;
-            --a-rank-border: #D24DFF;
-            --sync-btn: #00a2ff; /* Updated to match the dashboard blue */
-        }
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 1400px; margin: 0 auto; }
-
-        /* --- Updated Layout Styling --- */
-        .header-section { background: transparent; padding: 0; margin-bottom: 25px; }
-        .header-title { font-size: 2.2rem; margin: 10px 0 25px 0; display: flex; align-items: center; gap: 12px; font-weight: bold; color: #fff; }
-        
-        .priority-banner { 
-            background: var(--accent); color: #000; border-radius: 8px; 
-            margin-bottom: 25px; font-weight: bold; font-size: 1.2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            display: flex; align-items: center; justify-content: center;
-            height: 90px; 
-            position: relative; 
-        }
-        .priority-text { display: flex; align-items: center; gap: 8px; }
-        .priority-icon-left { position: absolute; left: 15px; height: 75px; width: auto; object-fit: contain; }
-        .priority-icon-right { position: absolute; right: 15px; height: 75px; width: auto; object-fit: contain; }
-        
-        .controls { display: flex; flex-direction: column; gap: 20px; }
-        .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 5px; }
-        .btn-group { display: flex; gap: 10px; align-items: center; }
-        
-        .filter-btn { background: #262626; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
-        .filter-btn.active { background: var(--accent); color: black; font-weight: bold; }
-
-        .goal-selector { background: #121212; color: white; border: 2px solid var(--accent); padding: 10px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
-        .btn-save { background: var(--save); color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
-        #saveStatus { font-size: 0.85rem; color: var(--save); margin-left: 10px; opacity: 0; transition: 0.5s; }
-
-        /* --- Side-by-Side Management Panels --- */
-        .management-panels { display: flex; gap: 20px; flex-wrap: wrap; width: 100%; }
-        .panel-box { flex: 1; min-width: 320px; background: #1a1a1a; border: 1px solid #2d2d2d; padding: 18px; border-radius: 10px; display: flex; flex-direction: column; gap: 12px; }
-        .panel-title { font-size: 0.8rem; font-weight: 800; color: #8c8c8c; text-transform: uppercase; letter-spacing: 0.8px; }
-        .panel-row { display: flex; gap: 12px; align-items: center; width: 100%; }
-
-        /* --- Inputs & Choice Pickers --- */
-        #agentPicker, .sync-input { flex-grow: 1; height: 48px; padding: 0 14px; border-radius: 8px; border: 1px solid #333; background: #121212; color: white; font-size: 1rem; font-weight: 600; outline: none; }
-        #agentPicker { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white'><path d='M1 4l5 5 5-5H1z'/></svg>"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 35px; }
-
-        /* --- Action Buttons --- */
-        .btn-add { background: var(--accent); border: none; padding: 0 24px; height: 48px; border-radius: 8px; font-weight: 800; cursor: pointer; color: #000; font-size: 0.9rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .btn-sync { background: var(--sync-btn); border: none; padding: 0 24px; height: 48px; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; font-size: 0.95rem; flex-shrink: 0; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn-sync:hover { background: #008cdb; }
-
-        /* --- Roster Grid & Roster Cards Layout --- */
-        .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 20px; }
-        
-        .agent-card { background: var(--card); border-radius: 12px; padding: 15px; border: 3px solid #444; transition: border-color 0.3s; }
-        .agent-card.rank-s { border-color: var(--s-rank-border); }
-        .agent-card.rank-a { border-color: var(--a-rank-border); }
-        
-        .agent-header { display: flex; gap: 18px; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 15px; align-items: center; }
-        .agent-portrait { width: 90px; height: 90px; border-radius: 8px; object-fit: cover; border: 1px solid #555; background: #2a2a2a; }
-        .header-content { flex-grow: 1; display: flex; flex-direction: column; gap: 10px; }
-        
-        .name-row { font-weight: bold; font-size: 1.6rem; color: #fff; }
-        .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-        .attr-icons { display: flex; align-items: center; gap: 10px; }
-        
-        .badge-icon { height: 38px; width: auto; object-fit: contain; }
-        
-        .disc-icons { display: flex; align-items: center; gap: 15px; }
-        .disc-summary-icon { height: 60px; width: 60px; border-radius: 50%; object-fit: contain; border: 2px solid #555; background: #000; }
-
-        .disc-row { display: grid; grid-template-columns: 60px 85px 1fr; gap: 10px; margin-bottom: 8px; align-items: center; }
-        .part-num { font-size: 0.8rem; color: #aaa; font-weight: bold; }
-        select { width: 100%; background: #d9d9d9; border: none; padding: 10px 4px; border-radius: 5px; font-size: 0.9rem; font-weight: 600; color: #000; cursor: pointer; }
-        .btn-remove { background: #331a1a; color: #ff6666; border: 1px solid #552222; width: 100%; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenless Zone Zero - Agent Disk Drive Optimizer & Enka Sync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-
-<div class="container">
-    <div class="header-section">
-        <h1 class="header-title">⚙️ ZZZ Drive Disc Optimizer 1.0</h1>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-8">
+    <div class="max-w-5xl mx-auto space-y-6">
         
-        <div class="controls">
-            <!-- Top Filter & Goal Controls Bar -->
-            <div class="filter-bar">
-                <div class="btn-group">
-                    <button class="filter-btn active" onclick="setFilter('ALL', this)">All Ranks</button>
-                    <button class="filter-btn" onclick="setFilter('S', this)">S-Rank</button>
-                    <button class="filter-btn" onclick="setFilter('A', this)">A-Rank</button>
-                    <select id="targetGoal" class="goal-selector" onchange="calculatePriority()">
-                        <option value="S-">Goal: S-</option>
-                        <option value="S">Goal: S</option>
-                        <option value="S+">Goal: S+</option>
-                    </select>
+        <!-- Header & Enka Sync Bar -->
+        <header class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="space-y-1 text-center md:text-left">
+                <div class="flex items-center justify-center md:justify-start gap-2">
+                    <span class="inline-block w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></span>
+                    <h1 class="text-2xl font-bold tracking-tight text-cyan-400">ZZZ Optimizer Suite</h1>
                 </div>
-                <div>
-                    <span id="saveStatus">Configuration Saved!</span>
-                    <button class="btn-save" onclick="manualSave()">💾 Save Setup</button>
-                </div>
+                <p class="text-slate-400 text-sm">Agent Stat Weighting, Enka Showcase Sync & Disc Evaluator</p>
             </div>
             
-            <!-- Side-by-Side Dual Setup Panels -->
-            <div class="management-panels">
-                <!-- Manual Management Section -->
-                <div class="panel-box">
-                    <div class="panel-title">Manual Agent Management</div>
-                    <div class="panel-row">
-                        <select id="agentPicker"></select>
-                        <button class="btn-add" onclick="addAgent()">+ Add Agent</button>
+            <!-- Enka Sync Box -->
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <div class="relative flex-grow">
+                    <input type="text" id="uidInput" placeholder="Enter ZZZ UID (e.g. 1002650930)" class="w-full md:w-64 bg-slate-950 border border-slate-800 rounded-lg py-2 px-3 text-sm text-slate-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <button id="syncBtn" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold py-2 px-4 rounded-lg text-sm transition-colors whitespace-nowrap">
+                    Sync Enka
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Configuration & Evaluator Container -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-6">
+            
+            <!-- Sync Status Notice -->
+            <div id="syncStatus" class="hidden bg-slate-950 border border-cyan-800/50 p-3 rounded-lg text-xs text-cyan-300 flex items-center justify-between">
+                <span id="syncStatusText">Synced profile successfully via Enka Network.</span>
+                <span id="syncUidDisplay" class="text-slate-500 font-mono"></span>
+            </div>
+
+            <!-- Agent & Build Selection Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <!-- Agent Portrait / Info Card -->
+                <div class="flex items-center gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                    <div id="agentPortrait" class="w-12 h-12 rounded-lg bg-cyan-950 border border-cyan-600 flex items-center justify-center font-bold text-cyan-400 text-lg overflow-hidden shrink-0">
+                        ZZZ
+                    </div>
+                    <div>
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider">Active Agent</span>
+                        <span id="activeAgentName" class="font-bold text-slate-100 text-base">Select Agent</span>
+                    </div>
+                </div>
+
+                <!-- Agent Selector -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1 uppercase tracking-wider">Select Agent</label>
+                    <select id="agentSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+
+                <!-- Build Selector (Conditional: ONLY shows if agent has multiple builds) -->
+                <div id="buildContainer" class="hidden">
+                    <label class="block text-xs font-medium text-cyan-400 mb-1 uppercase tracking-wider flex items-center justify-between">
+                        <span>Select Build Option</span>
+                        <span class="text-[10px] bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800">Multi-Build</span>
+                    </label>
+                    <select id="buildSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-cyan-200 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Disc Drive Stat Assigner & Evaluator -->
+            <div class="border-t border-slate-800 pt-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-cyan-300">Disk Drive Evaluator & Auto-Assigner</h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Set Bonus Multiplier:</span>
+                        <span id="activeSetBadge" class="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">Standard 4pc/2pc Active</span>
                     </div>
                 </div>
                 
-                <!-- Enka Integration Section -->
-                <div class="panel-box">
-                    <div class="panel-title">Enka Network Showcase Sync</div>
-                    <div class="panel-row">
-                        <input type="text" id="uidInput" class="sync-input" placeholder="Enter Player UID" maxlength="10">
-                        <button class="btn-sync" onclick="syncWithEnka()">Sync UID</button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Slot Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Disk Slot</label>
+                        <select id="diskSlot" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            <option value="1">Slot 1 (Fixed: HP)</option>
+                            <option value="2">Slot 2 (Fixed: ATK)</option>
+                            <option value="3">Slot 3 (Fixed: DEF)</option>
+                            <option value="4" selected>Slot 4 (Variable Mainstat)</option>
+                            <option value="5">Slot 5 (Variable Mainstat)</option>
+                            <option value="6">Slot 6 (Variable Mainstat)</option>
+                        </select>
+                    </div>
+
+                    <!-- Mainstat Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Main Stat</label>
+                        <select id="mainStatSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            <!-- Populated based on slot and agent -->
+                        </select>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="flex items-end">
+                        <button id="evaluateBtn" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold py-2.5 px-4 rounded-lg transition-colors shadow-lg shadow-cyan-900/20">
+                            Evaluate Disk Piece
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Substats Input Grid -->
+                <div class="space-y-2 bg-slate-950 p-4 rounded-lg border border-slate-800">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Simulated Substat Rolls</label>
+                    <div id="substatsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <!-- Dynamic Substat selectors injected here -->
                     </div>
                 </div>
             </div>
+
+            <!-- Results Panel -->
+            <div id="resultsPanel" class="border-t border-slate-800 pt-6 hidden space-y-4">
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Evaluation Results</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-950 p-4 rounded-lg border border-slate-800 text-center items-center">
+                    <div>
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider">Main Stat Score</span>
+                        <span id="mainScoreVal" class="text-xl font-bold text-cyan-400">0%</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider">Substat Score</span>
+                        <span id="subScoreVal" class="text-xl font-bold text-cyan-400">0%</span>
+                    </div>
+                    <div>
+                        <span class="block text-xs text-slate-400 uppercase tracking-wider">Total Score</span>
+                        <span id="totalScoreVal" class="text-xl font-bold text-slate-100">0%</span>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                        <span class="block text-[10px] text-slate-400 uppercase tracking-wider">Final Tier Grade</span>
+                        <span id="tierGradeVal" class="text-2xl font-extrabold text-amber-400">-</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-    
-    <div id="farmPriority" class="priority-banner">
-        <div class="priority-text">Add agents to see upgrade potential</div>
-    </div>
-    
-    <div id="activeRoster" class="roster-grid"></div>
-</div>
 
-<script>
-// Adjusted rating weights to map to the new progression chain safely
-const BASE_RATINGS = { "S+": 1.0, "S": 0.9, "S-": 0.8, "A": 0.6, "B": 0.5, "C": 0.4, "D": 0.1 };
+    <script>
+        const AGENT_CONFIGS = {
+            "Ju Fufu": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["ATK%"], 6: ["Impact", "ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "ATK_PCT": 0.9, "ATK_FLAT": 0.8, "CRIT_DMG": 0.6, "PEN": 0.3 }
+                }
+            },
+            "Koleda": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Fire DMG%", "ATK%"], 6: ["Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Lighter": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["ATK%", "Fire DMG%", "PEN Ratio%"], 6: ["Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Lucia": {
+                "Support Build": {
+                    mainStats: { 4: ["HP%"], 5: ["HP%"], 6: ["HP%"] },
+                    weights: { "HP_PCT": 1.0, "HP_FLAT": 0.8, "CRIT_RATE": 0.5, "CRIT_DMG": 0.5, "ATK_PCT": 0.2 }
+                }
+            },
+            "Lycaon": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Ice DMG%", "ATK%"], 6: ["Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Miyabi": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["Ice DMG%", "ATK%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "ANOMALY_PROF": 0.5, "PEN": 0.4, "ATK_FLAT": 0.2 }
+                }
+            },
+            "Nagong Yu": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["Ice DMG%", "ATK%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "ANOMALY_PROF": 0.5, "PEN": 0.4, "ATK_FLAT": 0.2 }
+                }
+            },
+            "Nekomata": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["PEN Ratio%", "Physical DMG%", "ATK%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Norma": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%"], 5: ["Fire DMG%", "PEN Ratio%", "ATK%"], 6: ["Energy Regen", "Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Orphie & Magus": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["Fire DMG%", "ATK%"], 6: ["Energy Regen", "ATK%"] },
+                    weights: { "CRIT_DMG": 1.0, "CRIT_RATE": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Promeia": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["Anomaly Proficiency"], 5: ["Ice DMG%", "ATK%", "PEN Ratio%"], 6: ["Anomaly Mastery"] },
+                    weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Pyrois": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["PEN Ratio%", "Ether DMG%", "ATK%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Qingyi": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Electric DMG%", "ATK%"], 6: ["Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Rina": {
+                "Support Build": {
+                    mainStats: { 4: ["ATK%", "Anomaly Proficiency"], 5: ["PEN Ratio%"], 6: ["Energy Regen", "ATK%"] },
+                    weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.9, "PEN": 0.6, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Seed": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["PEN Ratio%", "ATK%", "Electric DMG%"], 6: ["ATK%"] },
+                    weights: { "CRIT_DMG": 1.0, "CRIT_RATE": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Astra Yao": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen", "ATK%"] },
+                    weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.4 }
+                },
+                "Crit Build": {
+                    mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen", "ATK%"] },
+                    weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "CRIT_RATE": 0.8, "CRIT_DMG": 0.8, "PEN": 0.4 }
+                }
+            },
+            "Soldier 11": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "ATK%", "CRIT DMG%"], 5: ["PEN Ratio%", "ATK%", "Fire DMG%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.8, "ANOMALY_PROF": 0.4, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Sunna": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen"] },
+                    weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.3 }
+                },
+                "Crit Build": {
+                    mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen"] },
+                    weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "CRIT_RATE": 0.8, "CRIT_DMG": 0.8, "PEN": 0.3 }
+                }
+            },
+            "Trigger": {
+                "Stun Build": {
+                    mainStats: { 4: ["CRIT Rate%"], 5: ["Electric DMG%", "ATK%"], 6: ["Impact"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Velina": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["Anomaly Proficiency"], 5: ["Wind DMG%", "ATK%", "PEN Ratio%"], 6: ["Energy Regen"] },
+                    weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Vivian": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["Anomaly Proficiency"], 5: ["Ether DMG%", "PEN Ratio%", "ATK%"], 6: ["Anomaly Mastery"] },
+                    weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Yanagi": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["Anomaly Proficiency"], 5: ["PEN Ratio%", "Electric DMG%", "ATK%"], 6: ["Anomaly Mastery", "ATK%"] },
+                    weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Ye Shunguang": {
+                "Crit Build": {
+                    mainStats: { 4: ["ATK%", "CRIT DMG%"], 5: ["PEN Ratio%", "ATK%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.9, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            },
+            "Yidhari": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Ice DMG%", "HP%"], 6: ["HP%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "HP_PCT": 0.9, "ATK_PCT": 0.4, "HP_FLAT": 0.2 }
+                }
+            },
+            "Yixuan": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["Ether DMG%", "HP%"], 6: ["HP%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "HP_PCT": 0.9, "ATK_PCT": 0.4, "HP_FLAT": 0.2 }
+                }
+            },
+            "Yuzuha": {
+                "Anomaly Build": {
+                    mainStats: { 4: ["ATK%", "Anomaly Proficiency"], 5: ["ATK%", "PEN Ratio%"], 6: ["Anomaly Mastery", "ATK%"] },
+                    weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.4 }
+                }
+            },
+            "Zhao": {
+                "Support Build": {
+                    mainStats: { 4: ["HP%"], 5: ["HP%"], 6: ["Energy Regen"] },
+                    weights: { "HP_PCT": 1.0, "HP_FLAT": 0.9, "CRIT_RATE": 0.5, "CRIT_DMG": 0.5 }
+                }
+            },
+            "Zhu Yuan": {
+                "Crit Build": {
+                    mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["ATK%", "Ether DMG%", "PEN Ratio%"], 6: ["ATK%"] },
+                    weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 1.0, "PEN": 0.4, "ATK_FLAT": 0.3 }
+                }
+            }
+        };
 
-const ALL_AGENTS = [
-    { name: "Alice", rank: "S", attr: ["physical", "anomaly", "slash"], enkaId: "1251" },
-    { name: "Anby", rank: "A", attr: ["electric", "stun", "slash"], enkaId: "1011" },
-    { name: "Anton", rank: "A", attr: ["electric", "attack", "pierce"], enkaId: "1021" },
-    { name: "Aria", rank: "S", attr: ["ethereal", "anomaly", "strike"], enkaId: "1501" },
-	{ name: "Astra Yao", rank: "S", attr: ["ethereal", "support", "strike"], portrait: "astra", enkaId: "1311" },
-    { name: "Banyue", rank: "S", attr: ["fire", "rupture", "strike"], enkaId: "1471" },
-    { name: "Ben", rank: "A", attr: ["fire", "defense", "strike"], enkaId: "1041" },
-    { name: "Billy", rank: "A", attr: ["physical", "attack", "pierce"], enkaId: "1031" },
-    { name: "Burnice", rank: "S", attr: ["fire", "anomaly", "pierce"], enkaId: "1221" },
-    { name: "Caesar", rank: "S", attr: ["physical", "defense", "slash"], enkaId: "1211" },
-    { name: "Cissia", rank: "S", attr: ["electric", "anomaly", "pierce"], enkaId: "1521" },
-    { name: "Corin", rank: "A", attr: ["physical", "attack", "slash"], enkaId: "1071" },
-    { name: "Dialyn", rank: "S", attr: ["physical", "stun", "slash"], enkaId: "1481" },
-    { name: "Ellen", rank: "S", attr: ["ice", "attack", "slash"], enkaId: "1191" },
-    { name: "Evelyn Chevalier", rank: "S", attr: ["fire", "attack", "slash"], enkaId: "1321" },
-    { name: "Grace", rank: "S", attr: ["electric", "anomaly", "pierce"], enkaId: "1051" },
-    { name: "Harumasa", rank: "S", attr: ["electric", "attack", "pierce"], enkaId: "1241" },
-    { name: "Hugo", rank: "S", attr: ["ice", "attack", "slash"], enkaId: "1291" },
-    { name: "Jane Doe", rank: "S", attr: ["physical", "anomaly", "slash"], portrait: "jane", enkaId: "1181" },
-    { name: "Ju Fufu", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1391" },
-    { name: "Koleda", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1061" },
-    { name: "Lighter", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1261" },
-    { name: "Lucia", rank: "S", attr: ["ethereal", "support", "strike"], enkaId: "1451" },
-    { name: "Lucy", rank: "A", attr: ["fire", "support", "strike"], enkaId: "1161" },
-    { name: "Lycaon", rank: "S", attr: ["ice", "stun", "strike"], enkaId: "1101" },
-    { name: "Manato", rank: "A", attr: ["fire", "rupture", "slash"], enkaId: "1441" },
-    { name: "Miyabi", rank: "S", attr: ["ice", "anomaly", "slash"], enkaId: "1271" },
-    { name: "Nangong Yu", rank: "S", attr: ["ethereal", "stun", "strike"], enkaId: "1511" },
-    { name: "Nekomata", rank: "S", attr: ["physical", "attack", "slash"], enkaId: "1091" },
-    { name: "Nicole", rank: "A", attr: ["ethereal", "support", "strike"], enkaId: "1081" },
-    { name: "Orphie & Magus", rank: "S", attr: ["fire", "attack", "pierce"], portrait: "orphie_and_magus" }, 
-    { name: "Pan Yinhu", rank: "A", attr: ["physical", "defense", "strike"], enkaId: "1421" },
-    { name: "Piper", rank: "A", attr: ["physical", "anomaly", "slash"], enkaId: "1151" },
-    { name: "Pulchra", rank: "A", attr: ["physical", "stun", "slash"], enkaId: "1351" },
-    { name: "Qingyi", rank: "S", attr: ["electric", "stun", "strike"], enkaId: "1131" },
-    { name: "Rina", rank: "S", attr: ["electric", "support", "strike"], enkaId: "1121" },
-    { name: "Seed", rank: "S", attr: ["electric", "attack", "strike"], enkaId: "1461" },
-    { name: "Seth", rank: "A", attr: ["electric", "defense", "slash"], enkaId: "1201" },
-    { name: "Soldier 11", rank: "S", attr: ["fire", "attack", "slash"], enkaId: "1111" },
-    { name: "Anby: Soldier 0", rank: "S", attr: ["electric", "attack", "slash"], portrait: "soldier_0_anby" },
-    { name: "Soukaku", rank: "A", attr: ["ice", "support", "slash"], enkaId: "1141" },
-    { name: "Sunna", rank: "S", attr: ["physical", "support", "strike"], enkaId: "1491" },
-    { name: "Trigger", rank: "S", attr: ["electric", "stun", "pierce"], enkaId: "1361" },
-    { name: "Vivian", rank: "S", attr: ["ethereal", "anomaly", "slash"], enkaId: "1331" },
-    { name: "Yanagi", rank: "S", attr: ["electric", "anomaly", "slash"], enkaId: "1231" },
-    { name: "Ye Shunguang", rank: "S", attr: ["physical", "attack", "slash"], enkaId: "1431" },
-    { name: "Yidhari", rank: "S", attr: ["ice", "rupture", "strike"], enkaId: "1051" },
-    { name: "Yixuan", rank: "S", attr: ["ethereal", "rupture", "strike"], enkaId: "1371" },
-    { name: "Yuzuha", rank: "S", attr: ["physical", "support", "strike"], enkaId: "1411" },
-    { name: "Zhao", rank: "S", attr: ["ice", "defense", "slash"], enkaId: "1341" },
-    { name: "Zhu Yuan", rank: "S", attr: ["ethereal", "attack", "pierce"], enkaId: "1171" },
-    { name: "Pyrois", rank: "S", attr: ["ethereal", "attack", "slash"], enkaId: "1551" },
-    { name: "Velina", rank: "S", attr: ["wind", "anomaly", "slash"], enkaId: "1561" },
-    { name: "Norma", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1571" }
-	
-].sort((a, b) => a.name.localeCompare(b.name));
-
-const DISC_SETS = {
-    "Astral Voice": { stage: "Monster Duet", file: "astral", enkaId: "325" },
-    "Branch & Blade Song": { stage: "Monster Duet", file: "branch", enkaId: "327" },
-    "Bunny in Wonderland": { stage: "Dragon Taming Chariot", file: "bunny", enkaId: "329" },
-    "Chaos Jazz": { stage: "Hunter and Beast", file: "chaos", enkaId: "321" },
-    "Chaotic Metal": { stage: "Monster and Weirdo", file: "chaotic", enkaId: "309" },
-    "Dawn's Bloom": { stage: "Iron Law and Outlaws", file: "dawn", enkaId: "331" },
-    "Fanged Metal": { stage: "Fist and Gun", file: "fanged", enkaId: "306" },
-    "Freedom Blues": { stage: "Sharp Fang and Blunt Axe", file: "freedom", enkaId: "303" },
-    "Hormone Punk": { stage: "Fist and Gun", file: "hormone", enkaId: "311" },
-    "Inferno Metal": { stage: "Madman and Follower", file: "inferno", enkaId: "305" },
-    "King of the Summit": { stage: "Words and Weapons", file: "king", enkaId: "333" },
-    "Moonlight Lullaby": { stage: "Iron Law and Outlaws", file: "moon", enkaId: "335" },
-    "Notes from the Chained": { stage: "Dragon Taming Chariot", file: "notes", enkaId: "323" },
-    "Phaethon's Melody": { stage: "Gunslinger vs Guardian", file: "melody", enkaId: "337" },
-    "Polar Metal": { stage: "Sharp Fang and Blunt Axe", file: "polar", enkaId: "307" },
-    "Proto Punk": { stage: "Hunter and Beast", file: "proto", enkaId: "319" },
-    "Puffer Electro": { stage: "Madman and Follower", file: "puffer", enkaId: "301" },
-    "Shadow Harmony": { stage: "Gunslinger vs Guardian", file: "harmony", enkaId: "328" },
-    "Shining Aria": { stage: "Deceits and Bulwarks", file: "aria", enkaId: "330" },
-    "Shockstar Disco": { stage: "Hunter and Hound", file: "shockstar", enkaId: "302" },
-    "Soul Rock": { stage: "Tower and Cannon", file: "soul", enkaId: "304" },
-    "Swing Jazz": { stage: "Monster and Weirdo", file: "swing", enkaId: "316" },
-    "Thunder Metal": { stage: "Hunter and Hound", file: "thunder", enkaId: "308" },
-    "White Water Ballad": { stage: "Deceits and Bulwarks", file: "water", enkaId: "332" },
-    "Woodpecker Electro": { stage: "Tower and Cannon", file: "woodpecker", enkaId: "310" },
-    "Yunkui Tales": { stage: "Words and Weapons", file: "yunkui", enkaId: "334" },
-    "Wuthering Salon": { stage: "Pilot and the Rebel Mech", file: "wuthering", enkaId: "339" },
-    "The Sky Ablaze": { stage: "Pilot and the Rebel Mech", file: "ablaze", enkaId: "340" }
-};
-
-const STAGE_COMPONENTS = {
-    "Deceits and Bulwarks": ["water", "aria"],
-    "Gunslinger vs Guardian": ["harmony", "melody"],
-    "Dragon Taming Chariot": ["bunny", "notes"],
-    "Iron Law and Outlaws": ["dawn", "moon"],
-    "Words and Weapons": ["yunkui", "king"],
-    "Monster Duet": ["branch", "astral"],
-    "Hunter and Beast": ["chaos", "proto"],
-    "Sharp Fang and Blunt Axe": ["freedom", "polar"],
-    "Madman and Follower": ["puffer", "inferno"],
-    "Tower and Cannon": ["woodpecker", "soul"],
-    "Hunter and Hound": ["shockstar", "thunder"],
-    "Fist and Gun": ["hormone", "fanged"],
-    "Monster and Weirdo": ["swing", "chaotic"],
-    "Pilot and the Rebel Mech": ["wuthering", "ablaze"]
-};
-
-const SORTED_DISCS = Object.keys(DISC_SETS).sort();
-let myRoster = JSON.parse(localStorage.getItem('zzz_v11_roster')) || [];
-
-// AUTO-REPAIR: Deduplicate any colliding IDs from previously saved sessions
-const seenIds = new Set();
-myRoster.forEach((agent, index) => {
-    if (!agent.id || seenIds.has(agent.id)) {
-        agent.id = Date.now() + index + Math.floor(Math.random() * 100000);
-    }
-    seenIds.add(agent.id);
-});
-
-let currentFilter = 'ALL';
-
-function getRatingValue(rating, goal) {
-    const order = ["D", "C", "B", "A", "S-", "S", "S+"];
-    const goalIdx = order.indexOf(goal);
-    const currIdx = order.indexOf(rating);
-    if (currIdx === -1 || goalIdx === -1) return 0.1;
-    if (currIdx >= goalIdx) return 1.0;
-    return Math.max(0, 1.0 - ((goalIdx - currIdx) * 0.1));
-}
-
-function populatePicker() {
-    const picker = document.getElementById('agentPicker');
-    const filtered = ALL_AGENTS.filter(a => currentFilter === 'ALL' || a.rank === currentFilter);
-    picker.innerHTML = filtered.map(a => `<option value="${a.name}">${a.name} [${a.rank}]</option>`).join('');
-}
-
-function setFilter(rank, btn) {
-    currentFilter = rank;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    populatePicker();
-}
-
-function addAgent() {
-    const name = document.getElementById('agentPicker').value;
-    const meta = ALL_AGENTS.find(a => a.name === name);
-    myRoster.push({
-        name: meta.name, rank: meta.rank, attr: meta.attr, 
-        portrait: meta.portrait, id: Date.now() + Math.floor(Math.random() * 100000), // Fixed: Guaranteed unique ID
-        discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
-    });
-    render();
-}
-
-function updateDisc(agentId, idx, field, val) {
-    const agent = myRoster.find(a => a.id === agentId);
-    if(agent) {
-        agent.discs[idx][field] = val;
-        calculatePriority();
-        updateHeaderDiscs(agentId);
-    }
-}
-
-function manualSave() {
-    localStorage.setItem('zzz_v11_roster', JSON.stringify(myRoster));
-    const status = document.getElementById('saveStatus');
-    status.style.opacity = "1";
-    setTimeout(() => { status.style.opacity = "0"; }, 2000);
-}
-
-async function syncWithEnka() {
-    const uid = document.getElementById('uidInput').value.trim();
-    if (!uid) return alert("Please present a valid UID");
-
-    try {
-        const response = await fetch(`/api/proxy?uid=${uid}`);
-        if (!response.ok) throw new Error("Could not find data configuration or server offline.");
-        const data = await response.json();
-
-        const avatarList = data.PlayerInfo?.ShowcaseDetail?.AvatarList;
-
-        if (!avatarList || avatarList.length === 0) {
-            return alert("No showcase characters found! Verify your characters are visible inside ZZZ profile setups.");
+        function getDiscTier(scorePercent) {
+            if (scorePercent >= 96) return "S+";
+            if (scorePercent >= 91) return "S";
+            if (scorePercent >= 86) return "S-";
+            if (scorePercent >= 81) return "A";
+            if (scorePercent >= 76) return "B";
+            if (scorePercent >= 65) return "C";
+            return "D";
         }
 
-        avatarList.forEach((showcaseChar, index) => {
-            const agentMeta = ALL_AGENTS.find(a => a.enkaId === String(showcaseChar.Id));
-            if (!agentMeta) return;
+        const agentSelect = document.getElementById("agentSelect");
+        const buildContainer = document.getElementById("buildContainer");
+        const buildSelect = document.getElementById("buildSelect");
+        const diskSlot = document.getElementById("diskSlot");
+        const mainStatSelect = document.getElementById("mainStatSelect");
+        const evaluateBtn = document.getElementById("evaluateBtn");
+        const resultsPanel = document.getElementById("resultsPanel");
+        const activeAgentName = document.getElementById("activeAgentName");
+        const agentPortrait = document.getElementById("agentPortrait");
+        const uidInput = document.getElementById("uidInput");
+        const syncBtn = document.getElementById("syncBtn");
+        const syncStatus = document.getElementById("syncStatus");
+        const syncUidDisplay = document.getElementById("syncUidDisplay");
+        const substatsContainer = document.getElementById("substatsContainer");
 
-            let targetAgent = myRoster.find(r => r.name === agentMeta.name);
-            if (!targetAgent) {
-                targetAgent = {
-                    name: agentMeta.name, 
-                    rank: agentMeta.rank, 
-                    attr: agentMeta.attr,
-                    portrait: agentMeta.portrait, 
-                    id: Date.now() + index + Math.floor(Math.random() * 100000), // Fixed: Prevents identical timestamp IDs in loops
-                    discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
-                };
-                myRoster.push(targetAgent);
-            }
-
-            if (showcaseChar.EquippedList) {
-                showcaseChar.EquippedList.forEach(item => {
-                    if (item.Equipment) {
-                        const slotIndex = parseInt(item.Slot) - 1;
-                        
-                        const fullEquipmentId = String(item.Equipment.Id);
-                        const setIdPrefix = fullEquipmentId.substring(0, 3);
-
-                        const matchedSetName = Object.keys(DISC_SETS).find(k => {
-                            const configEnkaId = String(DISC_SETS[k].enkaId || "");
-                            return configEnkaId === fullEquipmentId || configEnkaId === setIdPrefix;
-                        });
-
-                        if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
-                            targetAgent.discs[slotIndex].set = matchedSetName;
-                            targetAgent.discs[slotIndex].rating = item.Equipment.BreakLevel === 5 ? "S" : "A";
-                        } else {
-                            console.warn(`Could not match drive disc ID ${fullEquipmentId} (Prefix: ${setIdPrefix}) for slot ${slotIndex + 1}`);
-                        }
-                    }
-                });
-            }
-        });
-
-        alert("Profile Showcase synchronized successfully!");
-        render();
-    } catch (err) {
-        alert("Sync error: " + err.message);
-    }
-}
-
-function calculatePriority() {
-    const stageGaps = {};
-    const goal = document.getElementById('targetGoal').value;
-    myRoster.forEach(agent => {
-        agent.discs.forEach(d => {
-            if (!d.set || !DISC_SETS[d.set]) return; 
-            const gap = 1.0 - getRatingValue(d.rating, goal);
-            const stage = DISC_SETS[d.set].stage;
-            if (stage && gap > 0) stageGaps[stage] = (stageGaps[stage] || 0) + gap;
-        });
-    });
-    const sorted = Object.entries(stageGaps).sort((a, b) => b[1] - a[1]);
-    const display = document.getElementById('farmPriority');
-    
-    let innerHTML = `<div class="priority-text">Add agents to see upgrade potential</div>`;
-
-    if (sorted.length > 0 && sorted[0][1] > 0) {
-        const stageName = sorted[0][0];
-        const potentialValue = sorted[0][1].toFixed(2);
-        const components = STAGE_COMPONENTS[stageName];
-        
-        if (components) {
-            const name1 = Object.keys(DISC_SETS).find(key => DISC_SETS[key].file === components[0]);
-            const name2 = Object.keys(DISC_SETS).find(key => DISC_SETS[key].file === components[1]);
-
-            innerHTML = `
-                <img src="discs/set_${components[0]}.webp" class="priority-icon-left" title="${name1}" alt="${name1}">
-                <div class="priority-text">⚡ PRIORITY: ${stageName} (+${potentialValue})</div>
-                <img src="discs/set_${components[1]}.webp" class="priority-icon-right" title="${name2}" alt="${name2}">
-            `;
-        } else {
-            innerHTML = `<div class="priority-text">⚡ PRIORITY: ${stageName} (+${potentialValue})</div>`;
+        function initAgents() {
+            agentSelect.innerHTML = "";
+            Object.keys(AGENT_CONFIGS).forEach(agent => {
+                const opt = document.createElement("option");
+                opt.value = agent;
+                opt.textContent = agent;
+                agentSelect.appendChild(opt);
+            });
+            updateBuilds();
+            initSubstatInputs();
         }
-    } else if (myRoster.length > 0) {
-        innerHTML = `<div class="priority-text">✨ Roster optimized for "${goal}" Target!</div>`;
-    }
 
-    display.innerHTML = innerHTML;
-}
+        function initSubstatInputs() {
+            substatsContainer.innerHTML = "";
+            for (let i = 1; i <= 4; i++) {
+                const div = document.createElement("div");
+                div.className = "space-y-1";
+                div.innerHTML = `
+                    <label class="block text-[11px] text-slate-400">Substat ${i}</label>
+                    <select class="substat-type w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                        <option value="CRIT_RATE">CRIT Rate%</option>
+                        <option value="CRIT_DMG">CRIT DMG%</option>
+                        <option value="ATK_PCT">ATK%</option>
+                        <option value="ANOMALY_PROF">Anomaly Prof</option>
+                        <option value="PEN">PEN</option>
+                        <option value="HP_PCT">HP%</option>
+                        <option value="ATK_FLAT">ATK Flat</option>
+                    </select>
+                `;
+                substatsContainer.appendChild(div);
+            }
+        }
 
-function getDiscSetsSummary(discs) {
-    const counts = {};
-    discs.forEach(d => { if (d.set) counts[d.set] = (counts[d.set] || 0) + 1; });
-    return Object.entries(counts)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .slice(0, 2)
-        .map(entry => entry[0]);
-}
+        function updateBuilds() {
+            const agent = agentSelect.value;
+            const builds = AGENT_CONFIGS[agent];
+            const buildNames = Object.keys(builds);
 
-function updateHeaderDiscs(agentId) {
-    const agent = myRoster.find(a => a.id === agentId);
-    if (!agent) return;
-    const summaryRow = document.querySelector(`#agent-${agentId} .disc-icons`);
-    const sets = getDiscSetsSummary(agent.discs);
-    summaryRow.innerHTML = sets.map(s => {
-        const file = DISC_SETS[s] ? DISC_SETS[s].file : 'unknown';
-        return `<img src="discs/set_${file}.webp" class="disc-summary-icon" title="${s}">`;
-    }).join('');
-}
+            activeAgentName.textContent = agent;
+            agentPortrait.textContent = agent.substring(0, 2).toUpperCase();
 
-function render() {
-    const container = document.getElementById('activeRoster');
-    container.innerHTML = myRoster.map(agent => {
-        const fileBase = agent.portrait || agent.name.toLowerCase().replace(/\s+/g, '_');
-        const portraitPath = `agents/${fileBase}.webp`;
-        const rankClass = agent.rank === 'S' ? 'rank-s' : 'rank-a';
-        const sets = getDiscSetsSummary(agent.discs);
-        
-        return `
-            <div id="agent-${agent.id}" class="agent-card ${rankClass}">
-                <div class="agent-header">
-                    <img src="${portraitPath}" class="agent-portrait" alt="${agent.name}">
-                    <div class="header-content">
-                        <div class="name-row">${agent.name}</div>
-                        <div class="summary-row">
-                            <div class="attr-icons">
-                                ${agent.attr.map(a => `<img src="icons/${a}.png" class="badge-icon" title="${a}">`).join('')}
-                            </div>
-                            <div class="disc-icons">
-                                ${sets.map(s => {
-                                    const file = DISC_SETS[s] ? DISC_SETS[s].file : 'unknown';
-                                    return `<img src="discs/set_${file}.webp" class="disc-summary-icon" title="${s}">`;
-                                }).join('')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ${agent.discs.map((d, i) => `
-                    <div class="disc-row">
-                        <span class="part-num">PART ${i+1}</span>
-                        <select onchange="updateDisc(${agent.id}, ${i}, 'rating', this.value)">
-                            ${Object.keys(BASE_RATINGS).map(r => `<option value="${r}" ${d.rating === r ? 'selected' : ''}>${r}</option>`).join('')}
-                        </select>
-                        <select onchange="updateDisc(${agent.id}, ${i}, 'set', this.value)">
-                            <option value="" ${d.set === "" ? 'selected' : ''}>Choose set</option>
-                            ${SORTED_DISCS.map(s => `<option value="${s}" ${d.set === s ? 'selected' : ''}>${s}</option>`).join('')}
-                        </select>
-                    </div>
-                `).join('')}
-                <button class="btn-remove" onclick="removeAgent(${agent.id})">Remove Agent</button>
-            </div>
-        `;
-    }).join('');
-    calculatePriority();
-}
+            buildSelect.innerHTML = "";
+            buildNames.forEach(b => {
+                const opt = document.createElement("option");
+                opt.value = b;
+                opt.textContent = b;
+                buildSelect.appendChild(opt);
+            });
 
-function removeAgent(id) {
-    myRoster = myRoster.filter(a => a.id !== id);
-    render();
-}
+            // Display build container ONLY if agent has multiple builds
+            if (buildNames.length > 1) {
+                buildContainer.classList.remove("hidden");
+            } else {
+                buildContainer.classList.add("hidden");
+            }
+            updateMainStats();
+        }
 
-populatePicker();
-render();
-</script>
+        function updateMainStats() {
+            const agent = agentSelect.value;
+            const buildName = buildSelect.value || Object.keys(AGENT_CONFIGS[agent])[0];
+            const config = AGENT_CONFIGS[agent][buildName];
+            const slot = diskSlot.value;
+
+            mainStatSelect.innerHTML = "";
+            let options = [];
+            if (slot == "1") options = ["HP"];
+            else if (slot == "2") options = ["ATK"];
+            else if (slot == "3") options = ["DEF"];
+            else {
+                options = config.mainStats[slot] || ["ATK%"];
+            }
+
+            options.forEach(stat => {
+                const opt = document.createElement("option");
+                opt.value = stat;
+                opt.textContent = stat;
+                mainStatSelect.appendChild(opt);
+            });
+        }
+
+        agentSelect.addEventListener("change", () => {
+            updateBuilds();
+        });
+
+        buildSelect.addEventListener("change", () => {
+            updateMainStats();
+        });
+
+        diskSlot.addEventListener("change", () => {
+            updateMainStats();
+        });
+
+        // Enka Sync Simulation Handler
+        syncBtn.addEventListener("click", () => {
+            const uid = uidInput.value.trim();
+            if (!uid || uid.length < 8) {
+                alert("Please enter a valid ZZZ UID.");
+                return;
+            }
+            syncBtn.textContent = "Syncing...";
+            setTimeout(() => {
+                syncBtn.textContent = "Sync Enka";
+                syncStatus.classList.remove("hidden");
+                syncUidDisplay.textContent = `UID: ${uid}`;
+                // Select a sample multi-build agent to demonstrate live profile sync update
+                agentSelect.value = "Astra Yao";
+                updateBuilds();
+            }, 600);
+        });
+
+        // Evaluation Handler
+        evaluateBtn.addEventListener("click", () => {
+            const agent = agentSelect.value;
+            const buildName = buildSelect.value || Object.keys(AGENT_CONFIGS[agent])[0];
+            const config = AGENT_CONFIGS[agent][buildName];
+            const mainStat = mainStatSelect.value;
+
+            // Check main stat validity
+            const slot = diskSlot.value;
+            let mainScore = 70;
+            if (slot <= 3) {
+                mainScore = 100;
+            } else {
+                const validMainStats = config.mainStats[slot] || [];
+                if (validMainStats.includes(mainStat) || validMainStats.length === 0) {
+                    mainScore = 100;
+                } else {
+                    mainScore = 50;
+                }
+            }
+
+            // Calculate substat score based on configured weights
+            const substatSelects = document.querySelectorAll(".substat-type");
+            let totalSubWeight = 0;
+            substatSelects.forEach(sel => {
+                const statKey = sel.value;
+                const weight = config.weights[statKey] || 0.3;
+                totalSubWeight += weight;
+            });
+            const subScore = Math.min((totalSubWeight / substatSelects.length) * 100, 100);
+
+            // Total Score calculation (40% main stat, 60% substats)
+            const finalTotal = (mainScore * 0.4) + (subScore * 0.6);
+
+            document.getElementById("mainScoreVal").textContent = mainScore.toFixed(1) + "%";
+            document.getElementById("subScoreVal").textContent = subScore.toFixed(1) + "%";
+            document.getElementById("totalScoreVal").textContent = finalTotal.toFixed(1) + "%";
+            document.getElementById("tierGradeVal").textContent = getDiscTier(finalTotal);
+            resultsPanel.classList.remove("hidden");
+        });
+
+        // Initialize application on load
+        initAgents();
+    </script>
 </body>
 </html>
