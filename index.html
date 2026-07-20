@@ -253,6 +253,16 @@ const STAGE_COMPONENTS = {
 
 const SORTED_DISCS = Object.keys(DISC_SETS).sort();
 let myRoster = JSON.parse(localStorage.getItem('zzz_v11_roster')) || [];
+
+// AUTO-REPAIR: Deduplicate any colliding IDs from previously saved sessions
+const seenIds = new Set();
+myRoster.forEach((agent, index) => {
+    if (!agent.id || seenIds.has(agent.id)) {
+        agent.id = Date.now() + index + Math.floor(Math.random() * 100000);
+    }
+    seenIds.add(agent.id);
+});
+
 let currentFilter = 'ALL';
 
 function getRatingValue(rating, goal) {
@@ -282,7 +292,7 @@ function addAgent() {
     const meta = ALL_AGENTS.find(a => a.name === name);
     myRoster.push({
         name: meta.name, rank: meta.rank, attr: meta.attr, 
-        portrait: meta.portrait, id: Date.now(),
+        portrait: meta.portrait, id: Date.now() + Math.floor(Math.random() * 100000), // Fixed: Guaranteed unique ID
         discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
     });
     render();
@@ -304,26 +314,22 @@ function manualSave() {
     setTimeout(() => { status.style.opacity = "0"; }, 2000);
 }
 
-	
 async function syncWithEnka() {
     const uid = document.getElementById('uidInput').value.trim();
     if (!uid) return alert("Please present a valid UID");
 
     try {
-        // FIXED: Using backticks (``) now ensures the actual UID variable is passed to Vercel
         const response = await fetch(`/api/proxy?uid=${uid}`);
         if (!response.ok) throw new Error("Could not find data configuration or server offline.");
         const data = await response.json();
 
-        // Drill into Enka's exact uppercase nested JSON properties for ZZZ data
         const avatarList = data.PlayerInfo?.ShowcaseDetail?.AvatarList;
 
         if (!avatarList || avatarList.length === 0) {
             return alert("No showcase characters found! Verify your characters are visible inside ZZZ profile setups.");
         }
 
-        avatarList.forEach(showcaseChar => {
-            // Match against your ALL_AGENTS array using Enka's uppercase "Id" field
+        avatarList.forEach((showcaseChar, index) => {
             const agentMeta = ALL_AGENTS.find(a => a.enkaId === String(showcaseChar.Id));
             if (!agentMeta) return;
 
@@ -334,33 +340,27 @@ async function syncWithEnka() {
                     rank: agentMeta.rank, 
                     attr: agentMeta.attr,
                     portrait: agentMeta.portrait, 
-                    id: Date.now(),
+                    id: Date.now() + index + Math.floor(Math.random() * 100000), // Fixed: Prevents identical timestamp IDs in loops
                     discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
                 };
                 myRoster.push(targetAgent);
             }
 
-            // Drill into Enka's character equipment array: "EquippedList"
             if (showcaseChar.EquippedList) {
                 showcaseChar.EquippedList.forEach(item => {
                     if (item.Equipment) {
-                        // Convert 1-indexed Slot from Enka to 0-indexed for our array
                         const slotIndex = parseInt(item.Slot) - 1;
                         
                         const fullEquipmentId = String(item.Equipment.Id);
                         const setIdPrefix = fullEquipmentId.substring(0, 3);
 
-                        // Match against your DISC_SETS mapping configuration object
                         const matchedSetName = Object.keys(DISC_SETS).find(k => {
                             const configEnkaId = String(DISC_SETS[k].enkaId || "");
-                            // Match exactly on either the full 5-digit item code or the core 3-digit set prefix
                             return configEnkaId === fullEquipmentId || configEnkaId === setIdPrefix;
                         });
 
                         if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
                             targetAgent.discs[slotIndex].set = matchedSetName;
-                            
-                            // Map BreakLevel 5 items cleanly as "S" rank, or fallback to "A"
                             targetAgent.discs[slotIndex].rating = item.Equipment.BreakLevel === 5 ? "S" : "A";
                         } else {
                             console.warn(`Could not match drive disc ID ${fullEquipmentId} (Prefix: ${setIdPrefix}) for slot ${slotIndex + 1}`);
