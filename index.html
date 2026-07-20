@@ -464,7 +464,7 @@ function normalizeStatKey(prop) {
     if (str === "11401" || str === "11402" || str === "14101" || str === "113" || str === "13" || str.includes("impact")) return "Impact";
     if (str === "14102" || str === "14103" || str === "14201" || str === "14001" || str === "114" || str === "14" || str.includes("energy") || str.includes("regen") || str.includes("sp")) return "Energy Regen";
     
-    // Elemental DMG% (Crucial for Slot 5 main stat checking)
+    // Elemental DMG%
     if (str === "31101" || str === "15101" || str === "30101" || str === "115" || str === "15" || str.includes("physical") || str.includes("physdmg")) return "Physical DMG%";
     if (str === "31201" || str === "15201" || str === "30201" || str === "116" || str === "16" || str.includes("fire") || str.includes("firedmg")) return "Fire DMG%";
     if (str === "31301" || str === "15301" || str === "30301" || str === "117" || str === "17" || str.includes("ice") || str.includes("icedmg")) return "Ice DMG%";
@@ -480,14 +480,12 @@ function extractDiscProperties(item, equipment) {
     let mainProp = null;
     let subProps = [];
 
-    // Check main stat explicit keys
     if (equipment?.MainProperty) mainProp = equipment.MainProperty;
     else if (equipment?.main_property) mainProp = equipment.main_property;
     else if (equipment?.MainStat) mainProp = equipment.MainStat;
     else if (item?.MainProperty) mainProp = item.MainProperty;
     else if (item?.MainPropertyList?.[0]) mainProp = item.MainPropertyList[0];
 
-    // Check substat array explicit keys
     const possibleSubLists = [
         equipment?.SubProperties,
         equipment?.SubPropertyList,
@@ -508,7 +506,6 @@ function extractDiscProperties(item, equipment) {
         }
     }
 
-    // Fallback: Check generic property arrays
     if (subProps.length === 0) {
         const genericList = equipment?.Properties || equipment?.PropertyList || equipment?.Stats || item?.Properties || item?.PropertyList || [];
         if (Array.isArray(genericList) && genericList.length > 0) {
@@ -532,35 +529,40 @@ function calculateSubstatDriveScore(agentName, item, equipment, slotIndex) {
     const weights = build.weights || {};
     const mainStats = build.mainStats || {};
 
-    let scorePercent = 60; // Base calibration
+    let scorePercent = 65; // Base calibration
     let totalWeightSum = 0;
 
     const { mainProp, subProps } = extractDiscProperties(item, equipment);
 
-    // Aggregate sub hits
     subProps.forEach(prop => {
         const parsedKey = normalizeStatKey(prop);
         const targetedWeight = weights[parsedKey] !== undefined ? weights[parsedKey] : 0;
         
-        // Extract roll counts across varying Enka naming structures
+        // Robust roll / upgrade step extraction from Enka ZZZ responses
         let rolls = 0;
-        if (prop.UpgradeCount !== undefined) rolls = Number(prop.UpgradeCount);
-        else if (prop.upgradeCount !== undefined) rolls = Number(prop.upgradeCount);
-        else if (prop.Level !== undefined) rolls = Number(prop.Level);
-        else if (prop.level !== undefined) rolls = Number(prop.level);
-        else if (prop.Count !== undefined) rolls = Number(prop.Count);
-        else if (prop.count !== undefined) rolls = Number(prop.count);
-        else if (prop.Rolls !== undefined) rolls = Number(prop.Rolls);
-        else if (prop.rolls !== undefined) rolls = Number(prop.rolls);
-        else if (prop.Times !== undefined) rolls = Number(prop.Times);
-        else if (prop.times !== undefined) rolls = Number(prop.times);
+        const candidateRolls = [
+            prop.UpgradeCount, prop.upgradeCount, 
+            prop.Level, prop.level, 
+            prop.Count, prop.count, 
+            prop.Rolls, prop.rolls, 
+            prop.Times, prop.times, 
+            prop.Step, prop.step, 
+            prop.Roll, prop.roll
+        ];
+        
+        for (const val of candidateRolls) {
+            if (val !== undefined && val !== null && !isNaN(val)) {
+                rolls = Number(val);
+                break;
+            }
+        }
 
-        // Every present substat represents 1 base roll + upgrade rolls
+        // Each substat starts with 1 base roll + upgrade rolls
         const upgradeRolls = rolls + 1;
         totalWeightSum += targetedWeight * upgradeRolls;
     });
 
-    scorePercent += (totalWeightSum * 7.5);
+    scorePercent += (totalWeightSum * 9.0);
 
     // Main Stat Compatibility check on slots 4, 5, 6
     if ([4, 5, 6].includes(slotIndex) && mainStats[slotIndex]) {
@@ -570,7 +572,7 @@ function calculateSubstatDriveScore(agentName, item, equipment, slotIndex) {
             m.toLowerCase().includes(activeMain.toLowerCase())
         );
         if (!passesMainCheck && activeMain !== "") {
-            scorePercent -= 15; // Penalty modifier if primary stat target breaks criteria
+            scorePercent -= 15; 
         }
     }
 
@@ -686,7 +688,6 @@ async function syncWithEnka() {
 
                         if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
                             targetAgent.discs[slotIndex].set = matchedSetName;
-                            // Evaluates substats and sets ratings using both item and equipment objects
                             targetAgent.discs[slotIndex].rating = calculateSubstatDriveScore(agentMeta.name, item, item.Equipment, slotIndex + 1);
                         }
                     }
