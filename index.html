@@ -12,13 +12,13 @@
             --save: #4caf50;
             --s-rank-border: #FF9326;
             --a-rank-border: #D24DFF;
-            --sync-btn: #00a2ff; /* Updated to match the dashboard blue */
+            --sync-btn: #00a2ff;
         }
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1400px; margin: 0 auto; }
 
-        /* --- Updated Layout Styling --- */
+        /* --- UI Layout Styling --- */
         .header-section { background: transparent; padding: 0; margin-bottom: 25px; }
         .header-title { font-size: 2.2rem; margin: 10px 0 25px 0; display: flex; align-items: center; gap: 12px; font-weight: bold; color: #fff; }
         
@@ -93,7 +93,6 @@
         <h1 class="header-title">⚙️ ZZZ Drive Disc Optimizer 1.0</h1>
         
         <div class="controls">
-            <!-- Top Filter & Goal Controls Bar -->
             <div class="filter-bar">
                 <div class="btn-group">
                     <button class="filter-btn active" onclick="setFilter('ALL', this)">All Ranks</button>
@@ -111,9 +110,7 @@
                 </div>
             </div>
             
-            <!-- Side-by-Side Dual Setup Panels -->
             <div class="management-panels">
-                <!-- Manual Management Section -->
                 <div class="panel-box">
                     <div class="panel-title">Manual Agent Management</div>
                     <div class="panel-row">
@@ -122,7 +119,6 @@
                     </div>
                 </div>
                 
-                <!-- Enka Integration Section -->
                 <div class="panel-box">
                     <div class="panel-title">Enka Network Showcase Sync</div>
                     <div class="panel-row">
@@ -142,7 +138,6 @@
 </div>
 
 <script>
-// Adjusted rating weights to map to the new progression chain safely
 const BASE_RATINGS = { "S+": 1.0, "S": 0.9, "S-": 0.8, "A": 0.6, "B": 0.5, "C": 0.4, "D": 0.1 };
 
 const ALL_AGENTS = [
@@ -150,7 +145,7 @@ const ALL_AGENTS = [
     { name: "Anby", rank: "A", attr: ["electric", "stun", "slash"], enkaId: "1011" },
     { name: "Anton", rank: "A", attr: ["electric", "attack", "pierce"], enkaId: "1021" },
     { name: "Aria", rank: "S", attr: ["ethereal", "anomaly", "strike"], enkaId: "1501" },
-	{ name: "Astra Yao", rank: "S", attr: ["ethereal", "support", "strike"], portrait: "astra", enkaId: "1311" },
+    { name: "Astra Yao", rank: "S", attr: ["ethereal", "support", "strike"], portrait: "astra", enkaId: "1311" },
     { name: "Banyue", rank: "S", attr: ["fire", "rupture", "strike"], enkaId: "1471" },
     { name: "Ben", rank: "A", attr: ["fire", "defense", "strike"], enkaId: "1041" },
     { name: "Billy", rank: "A", attr: ["physical", "attack", "pierce"], enkaId: "1031" },
@@ -200,7 +195,6 @@ const ALL_AGENTS = [
     { name: "Pyrois", rank: "S", attr: ["ethereal", "attack", "slash"], enkaId: "1551" },
     { name: "Velina", rank: "S", attr: ["wind", "anomaly", "slash"], enkaId: "1561" },
     { name: "Norma", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1571" }
-	
 ].sort((a, b) => a.name.localeCompare(b.name));
 
 const DISC_SETS = {
@@ -251,10 +245,258 @@ const STAGE_COMPONENTS = {
     "Pilot and the Rebel Mech": ["wuthering", "ablaze"]
 };
 
+// --- AGENT_CONFIGS & Grading Core Engine ---
+const AGENT_CONFIGS = {
+    "Ju Fufu": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["ATK%"], 6: ["Impact", "ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "ATK_PCT": 0.9, "ATK_FLAT": 0.8, "CRIT_DMG": 0.6, "PEN": 0.3 }
+        }
+    },
+    "Koleda": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Fire DMG%", "ATK%"], 6: ["Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Lighter": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["ATK%", "Fire DMG%", "PEN Ratio%"], 6: ["Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Lucia": {
+        "Support Build": {
+            mainStats: { 4: ["HP%"], 5: ["HP%"], 6: ["HP%"] },
+            weights: { "HP_PCT": 1.0, "HP_FLAT": 0.8, "CRIT_RATE": 0.5, "CRIT_DMG": 0.5, "ATK_PCT": 0.2 }
+        }
+    },
+    "Lycaon": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Ice DMG%", "ATK%"], 6: ["Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Miyabi": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["Ice DMG%", "ATK%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "ANOMALY_PROF": 0.5, "PEN": 0.4, "ATK_FLAT": 0.2 }
+        }
+    },
+    "Nagong Yu": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "ATK%"], 5: ["Ice DMG%", "ATK%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "ANOMALY_PROF": 0.5, "PEN": 0.4, "ATK_FLAT": 0.2 }
+        }
+    },
+    "Nekomata": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["PEN Ratio%", "Physical DMG%", "ATK%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Norma": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%"], 5: ["Fire DMG%", "PEN Ratio%", "ATK%"], 6: ["Energy Regen", "Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.9, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Orphie & Magus": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["Fire DMG%", "ATK%"], 6: ["Energy Regen", "ATK%"] },
+            weights: { "CRIT_DMG": 1.0, "CRIT_RATE": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Promeia": {
+        "Anomaly Build": {
+            mainStats: { 4: ["Anomaly Proficiency"], 5: ["Ice DMG%", "ATK%", "PEN Ratio%"], 6: ["Anomaly Mastery"] },
+            weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Pyrois": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["PEN Ratio%", "Ether DMG%", "ATK%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Qingyi": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Electric DMG%", "ATK%"], 6: ["Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Rina": {
+        "Support Build": {
+            mainStats: { 4: ["ATK%", "Anomaly Proficiency"], 5: ["PEN Ratio%"], 6: ["Energy Regen", "ATK%"] },
+            weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.9, "PEN": 0.6, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Seed": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["PEN Ratio%", "ATK%", "Electric DMG%"], 6: ["ATK%"] },
+            weights: { "CRIT_DMG": 1.0, "CRIT_RATE": 1.0, "ATK_PCT": 0.8, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Astra Yao": {
+        "Anomaly Build": {
+            mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen", "ATK%"] },
+            weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.4 }
+        },
+        "Crit Build": {
+            mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen", "ATK%"] },
+            weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "CRIT_RATE": 0.8, "CRIT_DMG": 0.8, "PEN": 0.4 }
+        }
+    },
+    "Soldier 11": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "ATK%", "CRIT DMG%"], 5: ["PEN Ratio%", "ATK%", "Fire DMG%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.8, "ANOMALY_PROF": 0.4, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Sunna": {
+        "Anomaly Build": {
+            mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen"] },
+            weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.3 }
+        },
+        "Crit Build": {
+            mainStats: { 4: ["ATK%"], 5: ["ATK%"], 6: ["Energy Regen"] },
+            weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "CRIT_RATE": 0.8, "CRIT_DMG": 0.8, "PEN": 0.3 }
+        }
+    },
+    "Trigger": {
+        "Stun Build": {
+            mainStats: { 4: ["CRIT Rate%"], 5: ["Electric DMG%", "ATK%"], 6: ["Impact"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 0.9, "ATK_PCT": 0.7, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Velina": {
+        "Anomaly Build": {
+            mainStats: { 4: ["Anomaly Proficiency"], 5: ["Wind DMG%", "ATK%", "PEN Ratio%"], 6: ["Energy Regen"] },
+            weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Vivian": {
+        "Anomaly Build": {
+            mainStats: { 4: ["Anomaly Proficiency"], 5: ["Ether DMG%", "PEN Ratio%", "ATK%"], 6: ["Anomaly Mastery"] },
+            weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Yanagi": {
+        "Anomaly Build": {
+            mainStats: { 4: ["Anomaly Proficiency"], 5: ["PEN Ratio%", "Electric DMG%", "ATK%"], 6: ["Anomaly Mastery", "ATK%"] },
+            weights: { "ANOMALY_PROF": 1.0, "ATK_PCT": 0.8, "PEN": 0.6, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Ye Shunguang": {
+        "Crit Build": {
+            mainStats: { 4: ["ATK%", "CRIT DMG%"], 5: ["PEN Ratio%", "ATK%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 0.9, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    },
+    "Yidhari": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT Rate%", "CRIT DMG%"], 5: ["Ice DMG%", "HP%"], 6: ["HP%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "HP_PCT": 0.9, "ATK_PCT": 0.4, "HP_FLAT": 0.2 }
+        }
+    },
+    "Yixuan": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["Ether DMG%", "HP%"], 6: ["HP%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "HP_PCT": 0.9, "ATK_PCT": 0.4, "HP_FLAT": 0.2 }
+        }
+    },
+    "Yuzuha": {
+        "Anomaly Build": {
+            mainStats: { 4: ["ATK%", "Anomaly Proficiency"], 5: ["ATK%", "PEN Ratio%"], 6: ["Anomaly Mastery", "ATK%"] },
+            weights: { "ATK_PCT": 1.0, "ATK_FLAT": 0.9, "ANOMALY_PROF": 0.8, "PEN": 0.4 }
+        }
+    },
+    "Zhao": {
+        "Support Build": {
+            mainStats: { 4: ["HP%"], 5: ["HP%"], 6: ["Energy Regen"] },
+            weights: { "HP_PCT": 1.0, "HP_FLAT": 0.9, "CRIT_RATE": 0.5, "CRIT_DMG": 0.5 }
+        }
+    },
+    "Zhu Yuan": {
+        "Crit Build": {
+            mainStats: { 4: ["CRIT DMG%", "CRIT Rate%"], 5: ["ATK%", "Ether DMG%", "PEN Ratio%"], 6: ["ATK%"] },
+            weights: { "CRIT_RATE": 1.0, "CRIT_DMG": 1.0, "ATK_PCT": 1.0, "PEN": 0.4, "ATK_FLAT": 0.3 }
+        }
+    }
+};
+
+function getDiscTier(scorePercent) {
+    if (scorePercent >= 96) return "S+";
+    if (scorePercent >= 91) return "S";
+    if (scorePercent >= 86) return "S-";
+    if (scorePercent >= 81) return "A";
+    if (scorePercent >= 76) return "B";
+    if (scorePercent >= 65) return "C";
+    return "D";
+}
+
+// Normalizes variant property fields coming from Enka properties down to config object targets
+function normalizeStatKey(propId) {
+    if (!propId) return "";
+    const keyStr = String(propId).toLowerCase();
+    if (keyStr.includes("critrate") || keyStr.includes("crit_rate")) return "CRIT_RATE";
+    if (keyStr.includes("critdmg") || keyStr.includes("crit_dmg")) return "CRIT_DMG";
+    if (keyStr.includes("atkp") || keyStr.includes("atk_pct")) return "ATK_PCT";
+    if (keyStr.includes("atkflat") || keyStr.includes("atk_flat") || (keyStr.includes("atk") && !keyStr.includes("p"))) return "ATK_FLAT";
+    if (keyStr.includes("hpp") || keyStr.includes("hp_pct")) return "HP_PCT";
+    if (keyStr.includes("hpflat") || keyStr.includes("hp_flat") || (keyStr.includes("hp") && !keyStr.includes("p"))) return "HP_FLAT";
+    if (keyStr.includes("defp") || keyStr.includes("def_pct")) return "DEF_PCT";
+    if (keyStr.includes("defflat") || keyStr.includes("def_flat") || (keyStr.includes("def") && !keyStr.includes("p"))) return "DEF_FLAT";
+    if (keyStr.includes("pen")) return "PEN";
+    if (keyStr.includes("anomalyprof") || keyStr.includes("anomaly_prof")) return "ANOMALY_PROF";
+    if (keyStr.includes("impact")) return "Impact";
+    if (keyStr.includes("energy") || keyStr.includes("energyregen")) return "Energy Regen";
+    return "";
+}
+
+function calculateSubstatDriveScore(agentName, equipment, slotIndex) {
+    if (!AGENT_CONFIGS[agentName]) return "D";
+
+    // Grab first active variant build array matching configuration configurations
+    const buildNames = Object.keys(AGENT_CONFIGS[agentName]);
+    const build = AGENT_CONFIGS[agentName][buildNames[0]];
+    const weights = build.weights || {};
+    const mainStats = build.mainStats || {};
+
+    let scorePercent = 60; // Base starting calibration
+    let totalWeightSum = 0;
+
+    // Aggregate sub hits
+    if (equipment.Properties && Array.isArray(equipment.Properties)) {
+        equipment.Properties.forEach(prop => {
+            const parsedKey = normalizeStatKey(prop.Name || prop.PropertyId);
+            const targetedWeight = weights[parsedKey] !== undefined ? weights[parsedKey] : 0;
+            const upgradeRolls = (prop.UpgradeCount !== undefined ? prop.UpgradeCount : 0) + 1;
+            totalWeightSum += targetedWeight * upgradeRolls;
+        });
+    }
+
+    // Convert accumulated weight counts to standard percentages 
+    scorePercent += (totalWeightSum * 7.5);
+
+    // Cross reference slot compatibility targets on partitions 4, 5, 6
+    if ([4, 5, 6].includes(slotIndex) && mainStats[slotIndex]) {
+        const activeMain = equipment.MainProperty ? String(equipment.MainProperty.Name || equipment.MainProperty.PropertyId || "") : "";
+        const passesMainCheck = mainStats[slotIndex].some(m => 
+            activeMain.toLowerCase().includes(m.replace("%", "").toLowerCase())
+        );
+        if (!passesMainCheck) {
+            scorePercent -= 15; // Penalty modifier if primary stat target breaks criteria
+        }
+    }
+
+    return getDiscTier(Math.min(100, Math.max(0, scorePercent)));
+}
+// --- End Core Evaluation Engine ---
+
 const SORTED_DISCS = Object.keys(DISC_SETS).sort();
 let myRoster = JSON.parse(localStorage.getItem('zzz_v11_roster')) || [];
 
-// AUTO-REPAIR: Deduplicate any colliding IDs from previously saved sessions
 const seenIds = new Set();
 myRoster.forEach((agent, index) => {
     if (!agent.id || seenIds.has(agent.id)) {
@@ -292,7 +534,7 @@ function addAgent() {
     const meta = ALL_AGENTS.find(a => a.name === name);
     myRoster.push({
         name: meta.name, rank: meta.rank, attr: meta.attr, 
-        portrait: meta.portrait, id: Date.now() + Math.floor(Math.random() * 100000), // Fixed: Guaranteed unique ID
+        portrait: meta.portrait, id: Date.now() + Math.floor(Math.random() * 100000),
         discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
     });
     render();
@@ -340,7 +582,7 @@ async function syncWithEnka() {
                     rank: agentMeta.rank, 
                     attr: agentMeta.attr,
                     portrait: agentMeta.portrait, 
-                    id: Date.now() + index + Math.floor(Math.random() * 100000), // Fixed: Prevents identical timestamp IDs in loops
+                    id: Date.now() + index + Math.floor(Math.random() * 100000),
                     discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
                 };
                 myRoster.push(targetAgent);
@@ -350,7 +592,6 @@ async function syncWithEnka() {
                 showcaseChar.EquippedList.forEach(item => {
                     if (item.Equipment) {
                         const slotIndex = parseInt(item.Slot) - 1;
-                        
                         const fullEquipmentId = String(item.Equipment.Id);
                         const setIdPrefix = fullEquipmentId.substring(0, 3);
 
@@ -361,9 +602,8 @@ async function syncWithEnka() {
 
                         if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
                             targetAgent.discs[slotIndex].set = matchedSetName;
-                            targetAgent.discs[slotIndex].rating = item.Equipment.BreakLevel === 5 ? "S" : "A";
-                        } else {
-                            console.warn(`Could not match drive disc ID ${fullEquipmentId} (Prefix: ${setIdPrefix}) for slot ${slotIndex + 1}`);
+                            // Uses pure substat scoring calculations driven by weights parameters
+                            targetAgent.discs[slotIndex].rating = calculateSubstatDriveScore(agentMeta.name, item.Equipment, slotIndex + 1);
                         }
                     }
                 });
