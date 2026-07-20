@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>ZZZ Drive Disc Optimizer 1.0</title>
-<style>
+    <style>
         :root { 
             --accent: #ffde59; 
             --bg: #121212; 
@@ -435,57 +435,141 @@ function getDiscTier(scorePercent) {
     return "D";
 }
 
-// Normalizes variant property fields coming from Enka properties down to config object targets
-function normalizeStatKey(propId) {
-    if (!propId) return "";
-    const keyStr = String(propId).toLowerCase();
-    if (keyStr.includes("critrate") || keyStr.includes("crit_rate")) return "CRIT_RATE";
-    if (keyStr.includes("critdmg") || keyStr.includes("crit_dmg")) return "CRIT_DMG";
-    if (keyStr.includes("atkp") || keyStr.includes("atk_pct")) return "ATK_PCT";
-    if (keyStr.includes("atkflat") || keyStr.includes("atk_flat") || (keyStr.includes("atk") && !keyStr.includes("p"))) return "ATK_FLAT";
-    if (keyStr.includes("hpp") || keyStr.includes("hp_pct")) return "HP_PCT";
-    if (keyStr.includes("hpflat") || keyStr.includes("hp_flat") || (keyStr.includes("hp") && !keyStr.includes("p"))) return "HP_FLAT";
-    if (keyStr.includes("defp") || keyStr.includes("def_pct")) return "DEF_PCT";
-    if (keyStr.includes("defflat") || keyStr.includes("def_flat") || (keyStr.includes("def") && !keyStr.includes("p"))) return "DEF_FLAT";
-    if (keyStr.includes("pen")) return "PEN";
-    if (keyStr.includes("anomalyprof") || keyStr.includes("anomaly_prof")) return "ANOMALY_PROF";
-    if (keyStr.includes("impact")) return "Impact";
-    if (keyStr.includes("energy") || keyStr.includes("energyregen")) return "Energy Regen";
-    return "";
+// BULLETPROOF NORMALIZER: Maps numeric Property IDs and text variations to exact AGENT_CONFIG keys
+function normalizeStatKey(prop) {
+    if (!prop) return "";
+    
+    const val = (typeof prop === 'object') ? (prop.Name || prop.name || prop.PropertyId || prop.propertyId || prop.Id || prop.id || prop.Type || prop.type || prop.PropType || prop.statType || prop.Key || "") : prop;
+    const str = String(val).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    // HP
+    if (str === "11101" || str === "101" || str === "1" || str === "hpflat" || str === "hp") return "HP_FLAT";
+    if (str === "11102" || str === "11103" || str === "102" || str === "2" || str === "hppct" || str === "hpp" || str === "hpratio") return "HP_PCT";
+    // ATK
+    if (str === "11201" || str === "103" || str === "3" || str === "atkflat" || str === "attackflat" || str === "atk" || str === "attack") return "ATK_FLAT";
+    if (str === "11202" || str === "11203" || str === "104" || str === "4" || str === "atkpct" || str === "atkp" || str === "attackpct" || str === "attackp" || str === "atkpercentage") return "ATK_PCT";
+    // DEF
+    if (str === "11301" || str === "105" || str === "5" || str === "defflat" || str === "def" || str === "defense") return "DEF_FLAT";
+    if (str === "11302" || str === "11303" || str === "106" || str === "6" || str === "defpct" || str === "defp" || str === "defpercentage") return "DEF_PCT";
+    // CRIT
+    if (str === "12101" || str === "20101" || str === "20103" || str === "12001" || str === "107" || str === "7" || str.includes("critrate") || str.includes("criticalrate")) return "CRIT_RATE";
+    if (str === "12102" || str === "20102" || str === "20104" || str === "12002" || str === "108" || str === "8" || str.includes("critdmg") || str.includes("criticaldmg") || str.includes("critdamage") || str.includes("criticaldamage")) return "CRIT_DMG";
+    // Anomaly
+    if (str === "13101" || str === "13103" || str === "21101" || str === "21103" || str === "13001" || str === "109" || str === "9" || str.includes("anomalyprof") || str.includes("anomprof") || str.includes("proficiency")) return "ANOMALY_PROF";
+    if (str === "13102" || str === "13104" || str === "21102" || str === "21104" || str === "13002" || str === "110" || str === "10" || str.includes("anomalymast") || str.includes("anommast") || str.includes("mastery")) return "Anomaly Mastery";
+    // PEN
+    if (str === "13201" || str === "13203" || str === "23101" || str === "13003" || str === "111" || str === "11" || (str.includes("pen") && !str.includes("pct") && !str.includes("ratio") && !str.includes("p") && !str.includes("percentage"))) return "PEN";
+    if (str === "13202" || str === "13204" || str === "23102" || str === "13004" || str === "112" || str === "12" || str.includes("penratio") || str.includes("penpct") || str.includes("penp") || (str.includes("pen") && (str.includes("ratio") || str.includes("pct") || str.includes("p")))) return "PEN Ratio%";
+    // Impact & Energy
+    if (str === "11401" || str === "11402" || str === "14101" || str === "113" || str === "13" || str.includes("impact")) return "Impact";
+    if (str === "14102" || str === "14103" || str === "14201" || str === "14001" || str === "114" || str === "14" || str.includes("energy") || str.includes("regen") || str.includes("sp")) return "Energy Regen";
+    
+    // Elemental DMG% (Crucial for Slot 5 main stat checking)
+    if (str === "31101" || str === "15101" || str === "30101" || str === "115" || str === "15" || str.includes("physical") || str.includes("physdmg")) return "Physical DMG%";
+    if (str === "31201" || str === "15201" || str === "30201" || str === "116" || str === "16" || str.includes("fire") || str.includes("firedmg")) return "Fire DMG%";
+    if (str === "31301" || str === "15301" || str === "30301" || str === "117" || str === "17" || str.includes("ice") || str.includes("icedmg")) return "Ice DMG%";
+    if (str === "31401" || str === "15401" || str === "30401" || str === "118" || str === "18" || str.includes("electric") || str.includes("elecdmg") || str.includes("lightning")) return "Electric DMG%";
+    if (str === "31501" || str === "15501" || str === "30501" || str === "119" || str === "19" || str.includes("ether") || str.includes("etherdmg")) return "Ether DMG%";
+    if (str === "31601" || str === "15601" || str === "30601" || str === "120" || str === "20" || str.includes("wind") || str.includes("winddmg")) return "Wind DMG%";
+
+    return str;
 }
 
-function calculateSubstatDriveScore(agentName, equipment, slotIndex) {
+// MULTI-OBJECT EXTRACTOR: Scans all potential Enka keys for substat and mainstat arrays
+function extractDiscProperties(item, equipment) {
+    let mainProp = null;
+    let subProps = [];
+
+    // Check main stat explicit keys
+    if (equipment?.MainProperty) mainProp = equipment.MainProperty;
+    else if (equipment?.main_property) mainProp = equipment.main_property;
+    else if (equipment?.MainStat) mainProp = equipment.MainStat;
+    else if (item?.MainProperty) mainProp = item.MainProperty;
+    else if (item?.MainPropertyList?.[0]) mainProp = item.MainPropertyList[0];
+
+    // Check substat array explicit keys
+    const possibleSubLists = [
+        equipment?.SubProperties,
+        equipment?.SubPropertyList,
+        equipment?.SubStats,
+        equipment?.sub_properties,
+        equipment?.subProperties,
+        equipment?.RandomPropertyList,
+        equipment?.RandomProperties,
+        item?.SubPropertyList,
+        item?.SubProperties,
+        item?.RandomPropertyList
+    ];
+
+    for (const list of possibleSubLists) {
+        if (Array.isArray(list) && list.length > 0) {
+            subProps = list;
+            break;
+        }
+    }
+
+    // Fallback: Check generic property arrays
+    if (subProps.length === 0) {
+        const genericList = equipment?.Properties || equipment?.PropertyList || equipment?.Stats || item?.Properties || item?.PropertyList || [];
+        if (Array.isArray(genericList) && genericList.length > 0) {
+            if (!mainProp && genericList.length > 1) {
+                mainProp = genericList[0];
+                subProps = genericList.slice(1);
+            } else {
+                subProps = genericList;
+            }
+        }
+    }
+
+    return { mainProp, subProps };
+}
+
+function calculateSubstatDriveScore(agentName, item, equipment, slotIndex) {
     if (!AGENT_CONFIGS[agentName]) return "D";
 
-    // Grab first active variant build array matching configuration configurations
     const buildNames = Object.keys(AGENT_CONFIGS[agentName]);
     const build = AGENT_CONFIGS[agentName][buildNames[0]];
     const weights = build.weights || {};
     const mainStats = build.mainStats || {};
 
-    let scorePercent = 60; // Base starting calibration
+    let scorePercent = 60; // Base calibration
     let totalWeightSum = 0;
 
-    // Aggregate sub hits
-    if (equipment.Properties && Array.isArray(equipment.Properties)) {
-        equipment.Properties.forEach(prop => {
-            const parsedKey = normalizeStatKey(prop.Name || prop.PropertyId);
-            const targetedWeight = weights[parsedKey] !== undefined ? weights[parsedKey] : 0;
-            const upgradeRolls = (prop.UpgradeCount !== undefined ? prop.UpgradeCount : 0) + 1;
-            totalWeightSum += targetedWeight * upgradeRolls;
-        });
-    }
+    const { mainProp, subProps } = extractDiscProperties(item, equipment);
 
-    // Convert accumulated weight counts to standard percentages 
+    // Aggregate sub hits
+    subProps.forEach(prop => {
+        const parsedKey = normalizeStatKey(prop);
+        const targetedWeight = weights[parsedKey] !== undefined ? weights[parsedKey] : 0;
+        
+        // Extract roll counts across varying Enka naming structures
+        let rolls = 0;
+        if (prop.UpgradeCount !== undefined) rolls = Number(prop.UpgradeCount);
+        else if (prop.upgradeCount !== undefined) rolls = Number(prop.upgradeCount);
+        else if (prop.Level !== undefined) rolls = Number(prop.Level);
+        else if (prop.level !== undefined) rolls = Number(prop.level);
+        else if (prop.Count !== undefined) rolls = Number(prop.Count);
+        else if (prop.count !== undefined) rolls = Number(prop.count);
+        else if (prop.Rolls !== undefined) rolls = Number(prop.Rolls);
+        else if (prop.rolls !== undefined) rolls = Number(prop.rolls);
+        else if (prop.Times !== undefined) rolls = Number(prop.Times);
+        else if (prop.times !== undefined) rolls = Number(prop.times);
+
+        // Every present substat represents 1 base roll + upgrade rolls
+        const upgradeRolls = rolls + 1;
+        totalWeightSum += targetedWeight * upgradeRolls;
+    });
+
     scorePercent += (totalWeightSum * 7.5);
 
-    // Cross reference slot compatibility targets on partitions 4, 5, 6
+    // Main Stat Compatibility check on slots 4, 5, 6
     if ([4, 5, 6].includes(slotIndex) && mainStats[slotIndex]) {
-        const activeMain = equipment.MainProperty ? String(equipment.MainProperty.Name || equipment.MainProperty.PropertyId || "") : "";
+        const activeMain = normalizeStatKey(mainProp);
         const passesMainCheck = mainStats[slotIndex].some(m => 
-            activeMain.toLowerCase().includes(m.replace("%", "").toLowerCase())
+            activeMain.toLowerCase().includes(m.replace("%", "").toLowerCase()) ||
+            m.toLowerCase().includes(activeMain.toLowerCase())
         );
-        if (!passesMainCheck) {
+        if (!passesMainCheck && activeMain !== "") {
             scorePercent -= 15; // Penalty modifier if primary stat target breaks criteria
         }
     }
@@ -602,8 +686,8 @@ async function syncWithEnka() {
 
                         if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
                             targetAgent.discs[slotIndex].set = matchedSetName;
-                            // Uses pure substat scoring calculations driven by weights parameters
-                            targetAgent.discs[slotIndex].rating = calculateSubstatDriveScore(agentMeta.name, item.Equipment, slotIndex + 1);
+                            // Evaluates substats and sets ratings using both item and equipment objects
+                            targetAgent.discs[slotIndex].rating = calculateSubstatDriveScore(agentMeta.name, item, item.Equipment, slotIndex + 1);
                         }
                     }
                 });
