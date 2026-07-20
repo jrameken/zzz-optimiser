@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZZZ Drive Disc Optimizer 1.0</title>
+    <style>
+        :root { 
+            --accent: #ffde59; 
+            --bg: #121212; 
+            --card: #1e1e1e; 
+            --text: #e0e0e0; 
+            --save: #4caf50;
+            --s-rank-border: #FF9326;
+            --a-rank-border: #D24DFF;
+            --sync-btn: #00bcd4;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        .header-section { background: var(--card); padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 20px; }
+        
+        .priority-banner { 
+            background: var(--accent); color: #000; border-radius: 8px; 
+            margin-bottom: 25px; font-weight: bold; font-size: 1.2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            height: 90px; 
+            position: relative; 
+        }
+        .priority-text { display: flex; align-items: center; gap: 8px; }
+        .priority-icon-left { position: absolute; left: 15px; height: 75px; width: auto; object-fit: contain; }
+        .priority-icon-right { position: absolute; right: 15px; height: 75px; width: auto; object-fit: contain; }
+        
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .btn-group { display: flex; gap: 10px; align-items: center; }
+        .filter-btn { background: #333; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+        .filter-btn.active { background: var(--accent); color: black; font-weight: bold; }
+
+        .goal-selector { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-save { background: var(--save); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        #saveStatus { font-size: 0.8rem; color: var(--save); margin-left: 10px; opacity: 0; transition: 0.5s; }
+
+        .search-area { display: flex; gap: 10px; flex-wrap: wrap; }
+        #agentPicker { flex-grow: 1; min-width: 200px; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: white; font-size: 1rem; }
+        .btn-add { background: var(--accent); border: none; padding: 0 30px; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; height: 48px; }
+
+        .sync-box { display: flex; gap: 10px; background: #252525; padding: 12px; border-radius: 8px; border: 1px solid #444; align-items: center; width: 100%; margin-top: 10px; }
+        .sync-input { background: #121212; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; width: 180px; font-weight: bold; }
+        .btn-sync { background: var(--sync-btn); border: none; padding: 8px 20px; border-radius: 4px; font-weight: bold; color: black; cursor: pointer; }
+
+        .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 20px; }
+        
+        .agent-card { background: var(--card); border-radius: 12px; padding: 15px; border: 3px solid #444; transition: border-color 0.3s; }
+        .agent-card.rank-s { border-color: var(--s-rank-border); }
+        .agent-card.rank-a { border-color: var(--a-rank-border); }
+        
+        .agent-header { display: flex; gap: 18px; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 15px; align-items: center; }
+        .agent-portrait { width: 90px; height: 90px; border-radius: 8px; object-fit: cover; border: 1px solid #555; background: #2a2a2a; }
+        .header-content { flex-grow: 1; display: flex; flex-direction: column; gap: 10px; }
+        
+        .name-row { font-weight: bold; font-size: 1.6rem; color: #fff; }
+        .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .attr-icons { display: flex; align-items: center; gap: 10px; }
+        
+        .badge-icon { height: 38px; width: auto; object-fit: contain; }
+        
+        .disc-icons { display: flex; align-items: center; gap: 15px; }
+        .disc-summary-icon { height: 60px; width: 60px; border-radius: 50%; object-fit: contain; border: 2px solid #555; background: #000; }
+
+        .disc-row { display: grid; grid-template-columns: 60px 85px 1fr; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .part-num { font-size: 0.8rem; color: #aaa; font-weight: bold; }
+        select { width: 100%; background: #d9d9d9; border: none; padding: 10px 4px; border-radius: 5px; font-size: 0.9rem; font-weight: 600; color: #000; cursor: pointer; }
+        .btn-remove { background: #331a1a; color: #ff6666; border: 1px solid #552222; width: 100%; margin-top: 10px; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>💿 ZZZ Drive Disc Optimizer 1.0</h1>
+        <div class="controls">
+            <div class="filter-bar">
+                <div class="btn-group">
+                    <button class="filter-btn active" onclick="setFilter('ALL', this)">All Ranks</button>
+                    <button class="filter-btn" onclick="setFilter('S', this)">S-Rank</button>
+                    <button class="filter-btn" onclick="setFilter('A', this)">A-Rank</button>
+                    <select id="targetGoal" class="goal-selector" onchange="calculatePriority()">
+                        <option value="S-">Goal: S-</option>
+                        <option value="S">Goal: S</option>
+                        <option value="S+">Goal: S+</option>
+                    </select>
+                </div>
+                <div>
+                    <span id="saveStatus">Configuration Saved!</span>
+                    <button class="btn-save" onclick="manualSave()">💾 Save Setup</button>
+                </div>
+            </div>
+            <div class="search-area">
+                <select id="agentPicker"></select>
+                <button class="btn-add" onclick="addAgent()">+ Add Agent</button>
+            </div>
+            <div class="sync-box">
+                <span style="font-weight: bold; font-size: 0.9rem; color: #bbb;">Enka Sync:</span>
+                <input type="text" id="uidInput" class="sync-input" placeholder="Enter ZZZ UID" maxlength="10">
+                <button class="btn-sync" onclick="syncWithEnka()">Sync Profile Showcase</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="farmPriority" class="priority-banner">
+        <div class="priority-text">Add agents to see upgrade potential</div>
+    </div>
+    
+    <div id="activeRoster" class="roster-grid"></div>
+</div>
+
+<script>
+// Adjusted rating weights to map to the new progression chain safely
+const BASE_RATINGS = { "S+": 1.0, "S": 0.9, "S-": 0.8, "A": 0.6, "B": 0.5, "C": 0.4, "D": 0.1 };
+
+const ALL_AGENTS = [
+    { name: "Alice", rank: "S", attr: ["physical", "anomaly", "slash"], enkaId: "1251" },
+    { name: "Anby", rank: "A", attr: ["electric", "stun", "slash"], enkaId: "1011" },
+    { name: "Anton", rank: "A", attr: ["electric", "attack", "pierce"], enkaId: "1021" },
+    { name: "Aria", rank: "S", attr: ["ethereal", "anomaly", "strike"], enkaId: "1501" },
+	{ name: "Astra Yao", rank: "S", attr: ["ethereal", "support", "strike"], portrait: "astra", enkaId: "1311" },
+    { name: "Banyue", rank: "S", attr: ["fire", "rupture", "strike"], enkaId: "1471" },
+    { name: "Ben", rank: "A", attr: ["fire", "defense", "strike"], enkaId: "1041" },
+    { name: "Billy", rank: "A", attr: ["physical", "attack", "pierce"], enkaId: "1031" },
+    { name: "Burnice", rank: "S", attr: ["fire", "anomaly", "pierce"], enkaId: "1221" },
+    { name: "Caesar", rank: "S", attr: ["physical", "defense", "slash"], enkaId: "1211" },
+    { name: "Cissia", rank: "S", attr: ["electric", "anomaly", "pierce"], enkaId: "1521" },
+    { name: "Corin", rank: "A", attr: ["physical", "attack", "slash"], enkaId: "1071" },
+    { name: "Dialyn", rank: "S", attr: ["physical", "stun", "slash"], enkaId: "1481" },
+    { name: "Ellen", rank: "S", attr: ["ice", "attack", "slash"], enkaId: "1191" },
+    { name: "Evelyn Chevalier", rank: "S", attr: ["fire", "attack", "slash"], enkaId: "1321" },
+    { name: "Grace", rank: "S", attr: ["electric", "anomaly", "pierce"], enkaId: "1051" },
+    { name: "Harumasa", rank: "S", attr: ["electric", "attack", "pierce"], enkaId: "1241" },
+    { name: "Hugo", rank: "S", attr: ["ice", "attack", "slash"], enkaId: "1291" },
+    { name: "Jane Doe", rank: "S", attr: ["physical", "anomaly", "slash"], portrait: "jane", enkaId: "1181" },
+    { name: "Ju Fufu", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1391" },
+    { name: "Koleda", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1061" },
+    { name: "Lighter", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1261" },
+    { name: "Lucia", rank: "S", attr: ["ethereal", "support", "strike"], enkaId: "1451" },
+    { name: "Lucy", rank: "A", attr: ["fire", "support", "strike"], enkaId: "1161" },
+    { name: "Lycaon", rank: "S", attr: ["ice", "stun", "strike"], enkaId: "1101" },
+    { name: "Manato", rank: "A", attr: ["fire", "rupture", "slash"], enkaId: "1441" },
+    { name: "Miyabi", rank: "S", attr: ["ice", "anomaly", "slash"], enkaId: "1271" },
+    { name: "Nangong Yu", rank: "S", attr: ["ethereal", "stun", "strike"], enkaId: "1511" },
+    { name: "Nekomata", rank: "S", attr: ["physical", "attack", "slash"], enkaId: "1091" },
+    { name: "Nicole", rank: "A", attr: ["ethereal", "support", "strike"], enkaId: "1081" },
+    { name: "Orphie & Magus", rank: "S", attr: ["fire", "attack", "pierce"], portrait: "orphie_and_magus" }, 
+    { name: "Pan Yinhu", rank: "A", attr: ["physical", "defense", "strike"], enkaId: "1421" },
+    { name: "Piper", rank: "A", attr: ["physical", "anomaly", "slash"], enkaId: "1151" },
+    { name: "Pulchra", rank: "A", attr: ["physical", "stun", "slash"], enkaId: "1351" },
+    { name: "Qingyi", rank: "S", attr: ["electric", "stun", "strike"], enkaId: "1131" },
+    { name: "Rina", rank: "S", attr: ["electric", "support", "strike"], enkaId: "1121" },
+    { name: "Seed", rank: "S", attr: ["electric", "attack", "strike"], enkaId: "1461" },
+    { name: "Seth", rank: "A", attr: ["electric", "defense", "slash"], enkaId: "1201" },
+    { name: "Soldier 11", rank: "S", attr: ["fire", "attack", "slash"], enkaId: "1111" },
+    { name: "Anby: Soldier 0", rank: "S", attr: ["electric", "attack", "slash"], portrait: "soldier_0_anby" },
+    { name: "Soukaku", rank: "A", attr: ["ice", "support", "slash"], enkaId: "1141" },
+    { name: "Sunna", rank: "S", attr: ["physical", "support", "strike"], enkaId: "1491" },
+    { name: "Trigger", rank: "S", attr: ["electric", "stun", "pierce"], enkaId: "1361" },
+    { name: "Vivian", rank: "S", attr: ["ethereal", "anomaly", "slash"], enkaId: "1331" },
+    { name: "Yanagi", rank: "S", attr: ["electric", "anomaly", "slash"], enkaId: "1231" },
+    { name: "Ye Shunguang", rank: "S", attr: ["physical", "attack", "slash"], enkaId: "1431" },
+    { name: "Yidhari", rank: "S", attr: ["ice", "rupture", "strike"], enkaId: "1051" },
+    { name: "Yixuan", rank: "S", attr: ["ethereal", "rupture", "strike"], enkaId: "1371" },
+    { name: "Yuzuha", rank: "S", attr: ["physical", "support", "strike"], enkaId: "1411" },
+    { name: "Zhao", rank: "S", attr: ["ice", "defense", "slash"], enkaId: "1341" },
+    { name: "Zhu Yuan", rank: "S", attr: ["ethereal", "attack", "pierce"], enkaId: "1171" },
+    { name: "Pyrois", rank: "S", attr: ["ethereal", "attack", "slash"], enkaId: "1551" },
+    { name: "Velina", rank: "S", attr: ["wind", "anomaly", "slash"], enkaId: "1561" },
+    { name: "Norma", rank: "S", attr: ["fire", "stun", "strike"], enkaId: "1571" }
+	
+].sort((a, b) => a.name.localeCompare(b.name));
+
+const DISC_SETS = {
+    "Astral Voice": { stage: "Monster Duet", file: "astral", enkaId: "325" },
+    "Branch & Blade Song": { stage: "Monster Duet", file: "branch", enkaId: "327" },
+    "Bunny in Wonderland": { stage: "Dragon Taming Chariot", file: "bunny", enkaId: "329" },
+    "Chaos Jazz": { stage: "Hunter and Beast", file: "chaos", enkaId: "321" },
+    "Chaotic Metal": { stage: "Monster and Weirdo", file: "chaotic", enkaId: "309" },
+    "Dawn's Bloom": { stage: "Iron Law and Outlaws", file: "dawn", enkaId: "331" },
+    "Fanged Metal": { stage: "Fist and Gun", file: "fanged", enkaId: "306" },
+    "Freedom Blues": { stage: "Sharp Fang and Blunt Axe", file: "freedom", enkaId: "303" },
+    "Hormone Punk": { stage: "Fist and Gun", file: "hormone", enkaId: "311" },
+    "Inferno Metal": { stage: "Madman and Follower", file: "inferno", enkaId: "305" },
+    "King of the Summit": { stage: "Words and Weapons", file: "king", enkaId: "333" },
+    "Moonlight Lullaby": { stage: "Iron Law and Outlaws", file: "moon", enkaId: "335" },
+    "Notes from the Chained": { stage: "Dragon Taming Chariot", file: "notes", enkaId: "323" },
+    "Phaethon's Melody": { stage: "Gunslinger vs Guardian", file: "melody", enkaId: "337" },
+    "Polar Metal": { stage: "Sharp Fang and Blunt Axe", file: "polar", enkaId: "307" },
+    "Proto Punk": { stage: "Hunter and Beast", file: "proto", enkaId: "319" },
+    "Puffer Electro": { stage: "Madman and Follower", file: "puffer", enkaId: "301" },
+    "Shadow Harmony": { stage: "Gunslinger vs Guardian", file: "harmony", enkaId: "328" },
+    "Shining Aria": { stage: "Deceits and Bulwarks", file: "aria", enkaId: "330" },
+    "Shockstar Disco": { stage: "Hunter and Hound", file: "shockstar", enkaId: "302" },
+    "Soul Rock": { stage: "Tower and Cannon", file: "soul", enkaId: "304" },
+    "Swing Jazz": { stage: "Monster and Weirdo", file: "swing", enkaId: "316" },
+    "Thunder Metal": { stage: "Hunter and Hound", file: "thunder", enkaId: "308" },
+    "White Water Ballad": { stage: "Deceits and Bulwarks", file: "water", enkaId: "332" },
+    "Woodpecker Electro": { stage: "Tower and Cannon", file: "woodpecker", enkaId: "310" },
+    "Yunkui Tales": { stage: "Words and Weapons", file: "yunkui", enkaId: "334" },
+    "Wuthering Salon": { stage: "Pilot and the Rebel Mech", file: "wuthering", enkaId: "339" },
+    "The Sky Ablaze": { stage: "Pilot and the Rebel Mech", file: "ablaze", enkaId: "340" }
+};
+
+const STAGE_COMPONENTS = {
+    "Deceits and Bulwarks": ["water", "aria"],
+    "Gunslinger vs Guardian": ["harmony", "melody"],
+    "Dragon Taming Chariot": ["bunny", "notes"],
+    "Iron Law and Outlaws": ["dawn", "moon"],
+    "Words and Weapons": ["yunkui", "king"],
+    "Monster Duet": ["branch", "astral"],
+    "Hunter and Beast": ["chaos", "proto"],
+    "Sharp Fang and Blunt Axe": ["freedom", "polar"],
+    "Madman and Follower": ["puffer", "inferno"],
+    "Tower and Cannon": ["woodpecker", "soul"],
+    "Hunter and Hound": ["shockstar", "thunder"],
+    "Fist and Gun": ["hormone", "fanged"],
+    "Monster and Weirdo": ["swing", "chaotic"],
+    "Pilot and the Rebel Mech": ["wuthering", "ablaze"]
+};
+
+const SORTED_DISCS = Object.keys(DISC_SETS).sort();
+let myRoster = JSON.parse(localStorage.getItem('zzz_v11_roster')) || [];
+let currentFilter = 'ALL';
+
+function getRatingValue(rating, goal) {
+    const order = ["D", "C", "B", "A", "S-", "S", "S+"];
+    const goalIdx = order.indexOf(goal);
+    const currIdx = order.indexOf(rating);
+    if (currIdx === -1 || goalIdx === -1) return 0.1;
+    if (currIdx >= goalIdx) return 1.0;
+    return Math.max(0, 1.0 - ((goalIdx - currIdx) * 0.1));
+}
+
+function populatePicker() {
+    const picker = document.getElementById('agentPicker');
+    const filtered = ALL_AGENTS.filter(a => currentFilter === 'ALL' || a.rank === currentFilter);
+    picker.innerHTML = filtered.map(a => `<option value="${a.name}">${a.name} [${a.rank}]</option>`).join('');
+}
+
+function setFilter(rank, btn) {
+    currentFilter = rank;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    populatePicker();
+}
+
+function addAgent() {
+    const name = document.getElementById('agentPicker').value;
+    const meta = ALL_AGENTS.find(a => a.name === name);
+    myRoster.push({
+        name: meta.name, rank: meta.rank, attr: meta.attr, 
+        portrait: meta.portrait, id: Date.now(),
+        discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
+    });
+    render();
+}
+
+function updateDisc(agentId, idx, field, val) {
+    const agent = myRoster.find(a => a.id === agentId);
+    if(agent) {
+        agent.discs[idx][field] = val;
+        calculatePriority();
+        updateHeaderDiscs(agentId);
+    }
+}
+
+function manualSave() {
+    localStorage.setItem('zzz_v11_roster', JSON.stringify(myRoster));
+    const status = document.getElementById('saveStatus');
+    status.style.opacity = "1";
+    setTimeout(() => { status.style.opacity = "0"; }, 2000);
+}
+
+async function syncWithEnka() {
+    const uid = document.getElementById('uidInput').value.trim();
+    if (!uid) return alert("Please present a valid UID");
+
+    try {
+        // FIXED: Using backticks (``) now ensures the actual UID variable is passed to Vercel
+        const response = await fetch(`/api/proxy?uid=${uid}`);
+        if (!response.ok) throw new Error("Could not find data configuration or server offline.");
+        const data = await response.json();
+
+        // Drill into Enka's exact uppercase nested JSON properties for ZZZ data
+        const avatarList = data.PlayerInfo?.ShowcaseDetail?.AvatarList;
+
+        if (!avatarList || avatarList.length === 0) {
+            return alert("No showcase characters found! Verify your characters are visible inside ZZZ profile setups.");
+        }
+
+        avatarList.forEach(showcaseChar => {
+            // Match against your ALL_AGENTS array using Enka's uppercase "Id" field
+            const agentMeta = ALL_AGENTS.find(a => a.enkaId === String(showcaseChar.Id));
+            if (!agentMeta) return;
+
+            let targetAgent = myRoster.find(r => r.name === agentMeta.name);
+            if (!targetAgent) {
+                targetAgent = {
+                    name: agentMeta.name, 
+                    rank: agentMeta.rank, 
+                    attr: agentMeta.attr,
+                    portrait: agentMeta.portrait, 
+                    id: Date.now(),
+                    discs: Array.from({length: 6}, () => ({ rating: "D", set: "" }))
+                };
+                myRoster.push(targetAgent);
+            }
+
+            // Drill into Enka's character equipment array: "EquippedList"
+            if (showcaseChar.EquippedList) {
+                showcaseChar.EquippedList.forEach(item => {
+                    if (item.Equipment) {
+                        // Convert 1-indexed Slot from Enka to 0-indexed for our array
+                        const slotIndex = parseInt(item.Slot) - 1;
+                        
+                        const fullEquipmentId = String(item.Equipment.Id);
+                        const setIdPrefix = fullEquipmentId.substring(0, 3);
+
+                        // Match against your DISC_SETS mapping configuration object
+                        const matchedSetName = Object.keys(DISC_SETS).find(k => {
+                            const configEnkaId = String(DISC_SETS[k].enkaId || "");
+                            // Match exactly on either the full 5-digit item code or the core 3-digit set prefix
+                            return configEnkaId === fullEquipmentId || configEnkaId === setIdPrefix;
+                        });
+
+                        if (matchedSetName && slotIndex >= 0 && slotIndex < 6) {
+                            targetAgent.discs[slotIndex].set = matchedSetName;
+                            
+                            // Map BreakLevel 5 items cleanly as "S" rank, or fallback to "A"
+                            targetAgent.discs[slotIndex].rating = item.Equipment.BreakLevel === 5 ? "S" : "A";
+                        } else {
+                            console.warn(`Could not match drive disc ID ${fullEquipmentId} (Prefix: ${setIdPrefix}) for slot ${slotIndex + 1}`);
+                        }
+                    }
+                });
+            }
+        });
+
+        alert("Profile Showcase synchronized successfully!");
+        render();
+    } catch (err) {
+        alert("Sync error: " + err.message);
+    }
+}
+
+function calculatePriority() {
+    const stageGaps = {};
+    const goal = document.getElementById('targetGoal').value;
+    myRoster.forEach(agent => {
+        agent.discs.forEach(d => {
+            if (!d.set || !DISC_SETS[d.set]) return; 
+            const gap = 1.0 - getRatingValue(d.rating, goal);
+            const stage = DISC_SETS[d.set].stage;
+            if (stage && gap > 0) stageGaps[stage] = (stageGaps[stage] || 0) + gap;
+        });
+    });
+    const sorted = Object.entries(stageGaps).sort((a, b) => b[1] - a[1]);
+    const display = document.getElementById('farmPriority');
+    
+    let innerHTML = `<div class="priority-text">Add agents to see upgrade potential</div>`;
+
+    if (sorted.length > 0 && sorted[0][1] > 0) {
+        const stageName = sorted[0][0];
+        const potentialValue = sorted[0][1].toFixed(2);
+        const components = STAGE_COMPONENTS[stageName];
+        
+        if (components) {
+            const name1 = Object.keys(DISC_SETS).find(key => DISC_SETS[key].file === components[0]);
+            const name2 = Object.keys(DISC_SETS).find(key => DISC_SETS[key].file === components[1]);
+
+            innerHTML = `
+                <img src="discs/set_${components[0]}.webp" class="priority-icon-left" title="${name1}" alt="${name1}">
+                <div class="priority-text">⚡ PRIORITY: ${stageName} (+${potentialValue})</div>
+                <img src="discs/set_${components[1]}.webp" class="priority-icon-right" title="${name2}" alt="${name2}">
+            `;
+        } else {
+            innerHTML = `<div class="priority-text">⚡ PRIORITY: ${stageName} (+${potentialValue})</div>`;
+        }
+    } else if (myRoster.length > 0) {
+        innerHTML = `<div class="priority-text">✨ Roster optimized for "${goal}" Target!</div>`;
+    }
+
+    display.innerHTML = innerHTML;
+}
+
+function getDiscSetsSummary(discs) {
+    const counts = {};
+    discs.forEach(d => { if (d.set) counts[d.set] = (counts[d.set] || 0) + 1; });
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 2)
+        .map(entry => entry[0]);
+}
+
+function updateHeaderDiscs(agentId) {
+    const agent = myRoster.find(a => a.id === agentId);
+    if (!agent) return;
+    const summaryRow = document.querySelector(`#agent-${agentId} .disc-icons`);
+    const sets = getDiscSetsSummary(agent.discs);
+    summaryRow.innerHTML = sets.map(s => {
+        const file = DISC_SETS[s] ? DISC_SETS[s].file : 'unknown';
+        return `<img src="discs/set_${file}.webp" class="disc-summary-icon" title="${s}">`;
+    }).join('');
+}
+
+function render() {
+    const container = document.getElementById('activeRoster');
+    container.innerHTML = myRoster.map(agent => {
+        const fileBase = agent.portrait || agent.name.toLowerCase().replace(/\s+/g, '_');
+        const portraitPath = `agents/${fileBase}.webp`;
+        const rankClass = agent.rank === 'S' ? 'rank-s' : 'rank-a';
+        const sets = getDiscSetsSummary(agent.discs);
+        
+        return `
+            <div id="agent-${agent.id}" class="agent-card ${rankClass}">
+                <div class="agent-header">
+                    <img src="${portraitPath}" class="agent-portrait" alt="${agent.name}">
+                    <div class="header-content">
+                        <div class="name-row">${agent.name}</div>
+                        <div class="summary-row">
+                            <div class="attr-icons">
+                                ${agent.attr.map(a => `<img src="icons/${a}.png" class="badge-icon" title="${a}">`).join('')}
+                            </div>
+                            <div class="disc-icons">
+                                ${sets.map(s => {
+                                    const file = DISC_SETS[s] ? DISC_SETS[s].file : 'unknown';
+                                    return `<img src="discs/set_${file}.webp" class="disc-summary-icon" title="${s}">`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${agent.discs.map((d, i) => `
+                    <div class="disc-row">
+                        <span class="part-num">PART ${i+1}</span>
+                        <select onchange="updateDisc(${agent.id}, ${i}, 'rating', this.value)">
+                            ${Object.keys(BASE_RATINGS).map(r => `<option value="${r}" ${d.rating === r ? 'selected' : ''}>${r}</option>`).join('')}
+                        </select>
+                        <select onchange="updateDisc(${agent.id}, ${i}, 'set', this.value)">
+                            <option value="" ${d.set === "" ? 'selected' : ''}>Choose set</option>
+                            ${SORTED_DISCS.map(s => `<option value="${s}" ${d.set === s ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </div>
+                `).join('')}
+                <button class="btn-remove" onclick="removeAgent(${agent.id})">Remove Agent</button>
+            </div>
+        `;
+    }).join('');
+    calculatePriority();
+}
+
+function removeAgent(id) {
+    myRoster = myRoster.filter(a => a.id !== id);
+    render();
+}
+
+populatePicker();
+render();
+</script>
+</body>
+</html>
